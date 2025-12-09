@@ -3,14 +3,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, #1d4ed8 0, #020617 40%);
+  background: radial-gradient(circle at top, #E8A05A 0, #F7EEDB 40%);
 }
 
 .login-card {
-  background: #020617;
+  background: #FFF6E8;
   padding: 2rem;
   border-radius: 0.9rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #E8DCC8;
   width: 100%;
   max-width: 380px;
 }
@@ -21,7 +21,7 @@
 
 .login-subtitle {
   font-size: 0.9rem;
-  color: #9ca3af;
+  color: #6E625C;
   margin-bottom: 1rem;
 }
 
@@ -41,11 +41,11 @@
 .login-note {
   margin-top: 1rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6E625C;
 }
 
 .error-text {
   margin-top: 0.4rem;
-  color: #ef4444;
+  color: #D9534F;
   font-size: 0.8rem;
 }

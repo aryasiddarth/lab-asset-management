@@ -1,7 +1,7 @@
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #0f172a;
-  color: #e5e7eb;
+  background-color: #F7EEDB;
+  color: #3A2F2A;
 }
 
 body {
@@ -26,15 +26,15 @@ a {
 
 .app-content {
   padding: 1.5rem 2rem;
-  background-color: #020617;
+  background-color: #FFF6E8;
   flex: 1;
   overflow-y: auto;
 }
 
 .sidebar {
   width: 240px;
-  background: #020617;
-  border-right: 1px solid #1f2937;
+  background: #FFF6E8;
+  border-right: 1px solid #E8DCC8;
   padding: 1.5rem 1rem;
 }
 
@@ -44,7 +44,7 @@ a {
 
 .sidebar-user {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #6E625C;
 }
 
 .sidebar-nav {
@@ -61,16 +61,17 @@ a {
 }
 
 .sidebar-nav a.active {
-  background-color: #1d4ed8;
+  background-color: #E8A05A;
+  color: white;
 }
 
 .navbar {
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid #E8DCC8;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #020617;
+  background: #FFF6E8;
 }
 
 .navbar-title {
@@ -85,7 +86,7 @@ a {
 
 .navbar-user {
   font-size: 0.9rem;
-  color: #9ca3af;
+  color: #6E625C;
 }
 
 .btn {
@@ -97,14 +98,18 @@ a {
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #E8A05A;
   color: white;
 }
 
+.btn-primary:hover {
+  background-color: #D98A3F;
+}
+
 .btn-outline {
-  border: 1px solid #4b5563;
+  border: 1px solid #E8DCC8;
   background: transparent;
-  color: #e5e7eb;
+  color: #3A2F2A;
 }
 
 .btn:disabled {
@@ -130,8 +135,8 @@ a {
 }
 
 .page-aside {
-  background: #020617;
-  border: 1px solid #1f2937;
+  background: #FFF6E8;
+  border: 1px solid #E8DCC8;
   border-radius: 0.75rem;
   padding: 1rem;
 }
@@ -145,13 +150,13 @@ a {
 .table th,
 .table td {
   padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid #E8DCC8;
 }
 
 .table th {
   text-align: left;
   font-weight: 500;
-  color: #9ca3af;
+  color: #6E625C;
 }
 
 .cards-grid {
@@ -161,9 +166,9 @@ a {
 }
 
 .card {
-  background: #020617;
+  background: #FFF6E8;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #E8DCC8;
   padding: 1rem;
 }
 
@@ -190,9 +195,9 @@ input,
 select {
   padding: 0.4rem 0.5rem;
   border-radius: 0.4rem;
-  border: 1px solid #4b5563;
-  background: #020617;
-  color: #e5e7eb;
+  border: 1px solid #E8DCC8;
+  background: #FFF6E8;
+  color: #3A2F2A;
 }
 
 .filters {
@@ -208,11 +213,11 @@ select {
 }
 
 .link {
-  color: #60a5fa;
+  color: #D98A3F;
 }
 
 .error-text {
-  color: #f97373;
+  color: #D9534F;
   font-size: 0.8rem;
 }
 
@@ -223,14 +228,14 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, #1d4ed8 0, #020617 40%);
+  background: radial-gradient(circle at top, #E8A05A 0, #F7EEDB 40%);
 }
 
 .login-card {
-  background: #020617;
+  background: #FFF6E8;
   padding: 2rem;
   border-radius: 0.9rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #E8DCC8;
   width: 100%;
   max-width: 380px;
 }
@@ -241,7 +246,7 @@ select {
 
 .login-subtitle {
   font-size: 0.9rem;
-  color: #9ca3af;
+  color: #6E625C;
   margin-bottom: 1rem;
 }
 
@@ -261,7 +266,7 @@ select {
 .login-note {
   margin-top: 1rem;
   font-size: 0.75rem;
-  color: #6b7280;
+  color: #6E625C;
 }
 
 .center-screen {
@@ -272,9 +277,10 @@ select {
 }
 
 .pre {
-  background: #020617;
+  background: #FFF6E8;
   padding: 0.6rem;
   border-radius: 0.5rem;
   font-size: 0.8rem;
   overflow-x: auto;
+  border: 1px solid #E8DCC8;
 }

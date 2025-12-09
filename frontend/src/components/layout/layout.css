@@ -11,7 +11,7 @@
 
 .app-content {
   padding: 1.5rem 2rem;
-  background-color: #020617;
+  background-color: #FFF6E8;
   flex: 1;
   overflow-y: auto;
 }
@@ -20,8 +20,8 @@
 
 .sidebar {
   width: 240px;
-  background: #020617;
-  border-right: 1px solid #1f2937;
+  background: #FFF6E8;
+  border-right: 1px solid #E8DCC8;
   padding: 1.5rem 1rem;
 }
 
@@ -31,7 +31,7 @@
 
 .sidebar-user {
   font-size: 0.85rem;
-  color: #9ca3af;
+  color: #6E625C;
 }
 
 .sidebar-nav {
@@ -45,22 +45,23 @@
   padding: 0.5rem 0.75rem;
   border-radius: 0.35rem;
   font-size: 0.95rem;
-  color: #e5e7eb;
+  color: #3A2F2A;
 }
 
 .sidebar-nav a.active {
-  background-color: #1d4ed8;
+  background-color: #E8A05A;
+  color: white;
 }
 
 /* Navbar */
 
 .navbar {
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #1f2937;
+  border-bottom: 1px solid #E8DCC8;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #020617;
+  background: #FFF6E8;
 }
 
 .navbar-title {
@@ -75,7 +76,7 @@
 
 .navbar-user {
   font-size: 0.9rem;
-  color: #9ca3af;
+  color: #6E625C;
 }
 
 /* Buttons */
@@ -89,14 +90,14 @@
 }
 
 .btn-primary {
-  background-color: #2563eb;
+  background-color: #E8A05A;
   color: white;
 }
 
 .btn-outline {
-  border: 1px solid #4b5563;
+  border: 1px solid #E8DCC8;
   background: transparent;
-  color: #e5e7eb;
+  color: #3A2F2A;
 }
 
 .btn:disabled {
@@ -124,8 +125,8 @@
 }
 
 .page-aside {
-  background: #020617;
-  border: 1px solid #1f2937;
+  background: #FFF6E8;
+  border: 1px solid #E8DCC8;
   border-radius: 0.75rem;
   padding: 1rem;
 }
