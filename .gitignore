@@ -5,6 +5,10 @@ frontend/.env
 
 # ===== BACKEND =====
 backend/node_modules/
+backend/.env.local
+backend/uploads/
+backend/*.log
+backend/.DS_Store 
 
 # ===== GENERAL =====
 .env
