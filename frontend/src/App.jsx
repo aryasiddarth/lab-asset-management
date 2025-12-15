@@ -8,7 +8,6 @@ import LabListPage from "./pages/Labs/LabListPage.jsx";
 import LabDetailPage from "./pages/Labs/LabDetailPage.jsx";
 import AssetListPage from "./pages/Assets/AssetListPage.jsx";
 import AssetDetailPage from "./pages/Assets/AssetDetailPage.jsx";
-import ImportExportPage from "./pages/ImportExportPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
 function App() {
@@ -30,7 +29,8 @@ function App() {
         <Route path="labs/:labId" element={<LabDetailPage />} />
         <Route path="assets" element={<AssetListPage />} />
         <Route path="assets/:assetId" element={<AssetDetailPage />} />
-        <Route path="import-export" element={<ImportExportPage />} />
+        {/* Backwards compatibility: /import-export shows the Assets page now */}
+        <Route path="import-export" element={<AssetListPage />} />
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />
