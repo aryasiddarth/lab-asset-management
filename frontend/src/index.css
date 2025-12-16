@@ -1,5 +1,5 @@
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Lato, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #3A2F2A;
 }
 
@@ -10,8 +10,8 @@ body {
 }
 
 body {
-  background-color: #ffffff; /* Changed from #F7EEDB to white */
-  background-image: none; /* Removed all background patterns */
+  background-color: #ffffff;
+  background-image: none;
   background-attachment: fixed;
 }
 
@@ -24,7 +24,7 @@ a {
   display: flex;
   min-height: 100vh;
   background-color: transparent;
-  background-image: none; /* Removed all background patterns */
+  background-image: none;
 }
 
 .app-main {
@@ -35,12 +35,10 @@ a {
 
 .app-content {
   padding: 1.5rem 2rem;
-  background-color: #ffffff; /* Changed from rgba(255, 246, 232, 0.96) to white */
+  background-color: #ffffff;
   flex: 1;
   overflow-y: auto;
 }
-
-/* Sidebar base styles are in layout.css; keep only shared nav styles here */
 
 .sidebar-nav {
   margin-top: 1rem;
@@ -58,22 +56,22 @@ a {
 }
 
 .sidebar-nav a:hover {
-  background-color: #F3E5D0;
+  background-color: #f3f3f3;
   transform: translateX(2px);
 }
 
 .sidebar-nav a.active {
-  background-color: #E8A05A;
+  background-color: #f58232;
   color: white;
 }
 
 .navbar {
   padding: 0.75rem 1.5rem;
-  border-bottom: 1px solid #E8DCC8;
+  border-bottom: 1px solid #ecebea;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  background: #ffffff;
 }
 
 .navbar-title {
@@ -100,18 +98,18 @@ a {
 }
 
 .btn-primary {
-  background-color: #E8A05A;
+  background-color: #f58232;
   color: white;
 }
 
 .btn-primary:hover {
-  background-color: #D98A3F;
+  background-color: #f26a0c;
   transform: translateY(-1px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 .btn-outline {
-  border: 1px solid #E8DCC8;
+  border: 1px solid #ecebea;
   background: transparent;
   color: #3A2F2A;
 }
@@ -126,7 +124,7 @@ a {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid rgba(232, 220, 200, 0.9);
+  border-bottom: 1px solid rgba(236, 235, 234, 0.9);
   padding-bottom: 0.5rem;
 }
 
@@ -147,8 +145,8 @@ a {
 }
 
 .page-aside {
-  background: #ffffff; /* Changed from #FFF6E8 to white */
-  border: 1px solid #E8DCC8;
+  background: #ffffff;
+  border: 1px solid #ecebea;
   border-radius: 0.75rem;
   padding: 1rem;
 }
@@ -162,7 +160,7 @@ a {
 .table th,
 .table td {
   padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid #E8DCC8;
+  border-bottom: 1px solid #ecebea;
 }
 
 .table th {
@@ -172,11 +170,11 @@ a {
 }
 
 .table tbody tr:nth-child(even) {
-  background-color: #f9f9f9; /* Changed from #FFF9F0 to light gray */
+  background-color: #f9f9f9;
 }
 
 .table tbody tr:hover {
-  background-color: #f5f5f5; /* Changed from #FFEFD9 to lighter gray */
+  background-color: #f5f5f5;
 }
 
 .cards-grid {
@@ -186,9 +184,9 @@ a {
 }
 
 .card {
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #E8DCC8;
+  border: 1px solid #ecebea;
   padding: 1rem;
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
@@ -196,7 +194,7 @@ a {
 .card:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.06);
-  border-color: #E8A05A;
+  border-color: #f58232;
 }
 
 .card-number {
@@ -204,8 +202,6 @@ a {
   font-weight: 600;
   margin-top: 0.5rem;
 }
-
-/* Dashboard specific */
 
 .dashboard-page {
   display: flex;
@@ -293,14 +289,14 @@ a {
   height: 120px;
   border-radius: 50%;
   position: relative;
-  background-color: #E8DCC8;
+  background-color: #ecebea;
 }
 
 .dashboard-pie-center {
   position: absolute;
   inset: 18px;
   border-radius: 50%;
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  background: #ffffff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -351,8 +347,8 @@ a {
 }
 
 .dashboard-activity {
-  background: #ffffff; /* Changed from #FFF6E8 to white */
-  border: 1px solid #E8DCC8;
+  background: #ffffff;
+  border: 1px solid #ecebea;
   border-radius: 0.75rem;
   padding: 1rem;
   display: flex;
@@ -388,7 +384,7 @@ a {
 }
 
 .dashboard-activity-item:hover {
-  background-color: #f5f5f5; /* Changed from #FFF0DC to light gray */
+  background-color: #f5f5f5;
   border-radius: 0.6rem;
   padding: 0.25rem 0.35rem;
   transform: translateX(2px);
@@ -397,7 +393,7 @@ a {
 .dashboard-activity-pill {
   padding: 0.1rem 0.4rem;
   border-radius: 999px;
-  background: #E8A05A;
+  background: #f58232;
   color: #fff;
   font-size: 0.7rem;
   font-weight: 600;
@@ -444,16 +440,16 @@ input,
 select {
   padding: 0.4rem 0.5rem;
   border-radius: 0.4rem;
-  border: 1px solid #E8DCC8;
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  border: 1px solid #ecebea;
+  background: #ffffff;
   color: #3A2F2A;
 }
 
 input:focus,
 select:focus {
   outline: none;
-  border-color: #E8A05A;
-  box-shadow: 0 0 0 2px rgba(232, 160, 90, 0.25);
+  border-color: #f58232;
+  box-shadow: 0 0 0 2px rgba(245, 130, 50, 0.25);
 }
 
 .filters {
@@ -468,8 +464,6 @@ select:focus {
   flex-direction: column;
   gap: 0.25rem;
 }
-
-/* Status pills (for assets, etc.) */
 
 .status-pill {
   display: inline-flex;
@@ -508,29 +502,27 @@ select:focus {
 }
 
 .link {
-  color: #D98A3F;
+  color: #f26a0c;
 }
 
 .error-text {
-  color: #D9534F;
+  color: #c23934;
   font-size: 0.8rem;
 }
-
-/* login */
 
 .login-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ffffff; /* Changed from radial gradient to white */
+  background: #ffffff;
 }
 
 .login-card {
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  background: #ffffff;
   padding: 2rem;
   border-radius: 0.9rem;
-  border: 1px solid #E8DCC8;
+  border: 1px solid #ecebea;
   width: 100%;
   max-width: 380px;
 }
@@ -572,10 +564,10 @@ select:focus {
 }
 
 .pre {
-  background: #ffffff; /* Changed from #FFF6E8 to white */
+  background: #ffffff;
   padding: 0.6rem;
   border-radius: 0.5rem;
   font-size: 0.8rem;
   overflow-x: auto;
-  border: 1px solid #E8DCC8;
+  border: 1px solid #ecebea;
 }
