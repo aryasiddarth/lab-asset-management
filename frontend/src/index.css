@@ -1,11 +1,30 @@
 :root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #F7EEDB;
   color: #3A2F2A;
 }
 
+html,
 body {
   margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background-color: #F7EEDB;
+  /* Wavy, minimal pattern in similar warm tones */
+  background-image:
+    radial-gradient(circle at 0 0, rgba(255, 207, 138, 0.35) 0, transparent 55%),
+    radial-gradient(circle at 100% 0, rgba(255, 193, 112, 0.3) 0, transparent 55%),
+    radial-gradient(circle at 0 100%, rgba(255, 214, 165, 0.28) 0, transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(255, 214, 165, 0.22) 0, transparent 55%),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.4) 0,
+      rgba(255, 255, 255, 0.4) 3px,
+      transparent 3px,
+      transparent 14px
+    );
+  background-attachment: fixed;
 }
 
 a {
@@ -16,6 +35,20 @@ a {
 .app-shell {
   display: flex;
   min-height: 100vh;
+  /* bring the wavy background visibly into the main app area too */
+  background-color: transparent;
+  background-image:
+    radial-gradient(circle at 0 0, rgba(255, 207, 138, 0.35) 0, transparent 55%),
+    radial-gradient(circle at 100% 0, rgba(255, 193, 112, 0.3) 0, transparent 55%),
+    radial-gradient(circle at 0 100%, rgba(255, 214, 165, 0.28) 0, transparent 55%),
+    radial-gradient(circle at 100% 100%, rgba(255, 214, 165, 0.22) 0, transparent 55%),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.4) 0,
+      rgba(255, 255, 255, 0.4) 3px,
+      transparent 3px,
+      transparent 14px
+    );
 }
 
 .app-main {
@@ -26,26 +59,12 @@ a {
 
 .app-content {
   padding: 1.5rem 2rem;
-  background-color: #FFF6E8;
+  background-color: rgba(255, 246, 232, 0.96);
   flex: 1;
   overflow-y: auto;
 }
 
-.sidebar {
-  width: 240px;
-  background: #FFF6E8;
-  border-right: 1px solid #E8DCC8;
-  padding: 1.5rem 1rem;
-}
-
-.sidebar-header h2 {
-  margin: 0 0 0.5rem;
-}
-
-.sidebar-user {
-  font-size: 0.85rem;
-  color: #6E625C;
-}
+/* Sidebar base styles are in layout.css; keep only shared nav styles here */
 
 .sidebar-nav {
   margin-top: 1rem;
@@ -58,6 +77,13 @@ a {
   padding: 0.5rem 0.75rem;
   border-radius: 0.35rem;
   font-size: 0.95rem;
+  color: #3A2F2A;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.sidebar-nav a:hover {
+  background-color: #F3E5D0;
+  transform: translateX(2px);
 }
 
 .sidebar-nav a.active {
@@ -104,6 +130,8 @@ a {
 
 .btn-primary:hover {
   background-color: #D98A3F;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
 }
 
 .btn-outline {
@@ -121,7 +149,15 @@ a {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(232, 220, 200, 0.9);
+  padding-bottom: 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.02em;
 }
 
 .page-columns {
@@ -159,6 +195,14 @@ a {
   color: #6E625C;
 }
 
+.table tbody tr:nth-child(even) {
+  background-color: #FFF9F0;
+}
+
+.table tbody tr:hover {
+  background-color: #FFEFD9;
+}
+
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -170,12 +214,241 @@ a {
   border-radius: 0.75rem;
   border: 1px solid #E8DCC8;
   padding: 1rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.06);
+  border-color: #E8A05A;
 }
 
 .card-number {
   font-size: 1.8rem;
   font-weight: 600;
   margin-top: 0.5rem;
+}
+
+/* Dashboard specific */
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dashboard-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: #6E625C;
+}
+
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(260px, 1fr);
+  gap: 1.5rem;
+}
+
+.dashboard-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.dashboard-stats-grid {
+  align-items: stretch;
+}
+
+.dashboard-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.dashboard-stat-clickable {
+  cursor: pointer;
+}
+
+.dashboard-stat-caption {
+  font-size: 0.8rem;
+  color: #6E625C;
+}
+
+.dashboard-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dashboard-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-card-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: #6E625C;
+}
+
+.dashboard-card-total {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.dashboard-pie {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.dashboard-pie-chart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+  background-color: #E8DCC8;
+}
+
+.dashboard-pie-center {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: #FFF6E8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+}
+
+.dashboard-pie-center-number {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.dashboard-pie-center-label {
+  font-size: 0.7rem;
+  color: #6E625C;
+}
+
+.dashboard-pie-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dashboard-pie-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+}
+
+.dashboard-pie-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dashboard-pie-legend-label {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.15rem;
+}
+
+.dashboard-pie-legend-count {
+  color: #6E625C;
+}
+
+.dashboard-activity {
+  background: #FFF6E8;
+  border: 1px solid #E8DCC8;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dashboard-activity h2 {
+  margin-top: 0;
+  margin-bottom: 0.25rem;
+}
+
+.dashboard-activity-empty {
+  font-size: 0.85rem;
+  color: #6E625C;
+}
+
+.dashboard-activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dashboard-activity-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-size: 0.8rem;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.dashboard-activity-item:hover {
+  background-color: #FFF0DC;
+  border-radius: 0.6rem;
+  padding: 0.25rem 0.35rem;
+  transform: translateX(2px);
+}
+
+.dashboard-activity-pill {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #E8A05A;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.dashboard-activity-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.dashboard-activity-title {
+  font-weight: 500;
+}
+
+.dashboard-activity-description {
+  color: #6E625C;
+}
+
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-activity {
+    order: -1;
+  }
 }
 
 .form-vertical {
@@ -200,10 +473,56 @@ select {
   color: #3A2F2A;
 }
 
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #E8A05A;
+  box-shadow: 0 0 0 2px rgba(232, 160, 90, 0.25);
+}
+
 .filters {
   display: flex;
   gap: 1rem;
   margin-bottom: 0.8rem;
+}
+
+.filters label {
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Status pills (for assets, etc.) */
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.status-pill--working {
+  background: rgba(76, 175, 80, 0.12);
+  color: #2e7d32;
+}
+
+.status-pill--repair {
+  background: rgba(255, 193, 7, 0.16);
+  color: #996400;
+}
+
+.status-pill--scrapped {
+  background: rgba(158, 158, 158, 0.2);
+  color: #424242;
+}
+
+.status-pill--lost {
+  background: rgba(244, 67, 54, 0.12);
+  color: #c62828;
 }
 
 .filters label {
