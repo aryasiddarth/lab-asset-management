@@ -44,5 +44,38 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
+router.post("/:labId/assign-asset", async (req, res) => {
+  const { labId } = req.params;
+  const { assetId } = req.body;
+
+  const asset = await Asset.findById(assetId);
+  if (!asset) {
+    return res.status(404).json({ message: "Asset not found" });
+  }
+
+  if (asset.labId) {
+    return res.status(400).json({ message: "Asset already assigned" });
+  }
+
+  asset.labId = labId;
+  await asset.save();
+
+  res.json({ message: "Asset assigned", asset });
+});
+
+router.post("/:labId/unassign-asset", async (req, res) => {
+  const { assetId } = req.body;
+
+  const asset = await Asset.findById(assetId);
+  if (!asset) {
+    return res.status(404).json({ message: "Asset not found" });
+  }
+
+  asset.labId = null;
+  await asset.save();
+
+  res.json({ message: "Asset unassigned", asset });
+});
+
 export default router;
 

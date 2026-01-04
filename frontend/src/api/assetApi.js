@@ -14,3 +14,9 @@ export async function createAsset(payload) {
   const res = await axiosClient.post("/assets", payload);
   return res.data;
 }
+
+export async function getUnassignedAssets() {
+  const res = await axiosClient.get("/assets/unassigned");
+  return res.data;
+}
+

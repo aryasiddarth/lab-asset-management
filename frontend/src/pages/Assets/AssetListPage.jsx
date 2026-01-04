@@ -42,7 +42,6 @@ function AssetListPage() {
   // Simple form to create a new asset
   const [newAsset, setNewAsset] = useState({
     assetTag: "",
-    labId: "",
     status: "WORKING",
   });
   const [creating, setCreating] = useState(false);
@@ -89,7 +88,7 @@ function AssetListPage() {
     try {
       const created = await assetApi.createAsset(newAsset);
       setAssets((prev) => [...prev, created]);
-      setNewAsset({ assetTag: "", labId: "", status: "WORKING" });
+      setNewAsset({ assetTag: "", status: "WORKING" });
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to create asset");
     } finally {
@@ -227,24 +226,6 @@ function AssetListPage() {
                 }
                 required
               />
-            </label>
-
-            <label>
-              Lab
-              <select
-                value={newAsset.labId}
-                onChange={(e) =>
-                  setNewAsset((prev) => ({ ...prev, labId: e.target.value }))
-                }
-                required
-              >
-                <option value="">Select lab</option>
-                {labs.map((lab) => (
-                  <option key={lab._id} value={lab._id}>
-                    {lab.code}
-                  </option>
-                ))}
-              </select>
             </label>
 
             <label>

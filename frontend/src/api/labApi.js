@@ -14,3 +14,11 @@ export async function createLab(payload) {
   const res = await axiosClient.post("/labs", payload);
   return res.data;
 }
+
+export async function assignAsset(labId, assetId) {
+  const res = await axiosClient.post(`/labs/${labId}/assign-asset`, {
+    assetId,
+  });
+  return res.data;
+}
+

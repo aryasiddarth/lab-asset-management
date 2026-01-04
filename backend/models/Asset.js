@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const assetSchema = new mongoose.Schema({
   assetTag: { type: String, required: true, unique: true },
-  labId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', required: true },
+  labId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', },
   status: {
     type: String,
     enum: ['WORKING', 'UNDER_REPAIR', 'SCRAPPED', 'LOST'],
