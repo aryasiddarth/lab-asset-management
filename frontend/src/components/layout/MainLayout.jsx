@@ -1,12 +1,22 @@
-import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
 import Navbar from "./Navbar.jsx";
+import { addActivity } from "../../utils/activityTracker.js";
 import "./layout.css";
 
 function MainLayout() {
   // Start with sidebar open; it will collapse after the user chooses a section.
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
+
+  // Track page visits
+  useEffect(() => {
+    // Don't track login page
+    if (location.pathname !== '/login') {
+      addActivity(location.pathname);
+    }
+  }, [location.pathname]);
 
   const handleToggleSidebar = () => {
     setSidebarOpen((open) => !open);

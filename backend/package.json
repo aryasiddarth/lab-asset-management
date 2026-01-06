@@ -6,6 +6,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed:users": "node scripts/seedUsers.js",
+    "seed:technicians": "node scripts/seedTechnicians.js",
     "verify:setup": "node scripts/verifySetup.js",
     "import:excel": "node scripts/importExcel.js",
     "import:doc": "node scripts/importDoc.js",

@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'lab_manager', 'technician', 'viewer'],
     default: 'viewer'
   },
-  department: { type: String, required: true }
+  department: { type: String, required: true },
+  labId: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', default: null }
 }, { timestamps: true });
 
 userSchema.pre('save', async function(next) {

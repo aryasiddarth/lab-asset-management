@@ -22,7 +22,7 @@ function Sidebar({ isOpen, onNavigate }) {
           Labs
         </NavLink>
         <NavLink to="/assets" onClick={handleClick}>
-          Assets
+          Assets/Stocks
         </NavLink>
       </nav>
     </aside>

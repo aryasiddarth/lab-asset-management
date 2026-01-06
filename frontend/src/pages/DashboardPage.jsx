@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as labApi from "../api/labApi.js";
 import * as assetApi from "../api/assetApi.js";
+import { getActivities } from "../utils/activityTracker.js";
 
 const PIE_COLORS = ["#E8A05A", "#8D6E63", "#4DB6AC", "#9575CD", "#FFB74D"];
 
@@ -82,6 +83,7 @@ function DashboardPage() {
   const [labs, setLabs] = useState([]);
   const [assets, setAssets] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activityRefresh, setActivityRefresh] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -121,23 +123,26 @@ function DashboardPage() {
   );
 
   const recentActivity = useMemo(() => {
-    const labEvents = labs.slice(-3).map((lab) => ({
-      id: lab._id,
-      type: "Lab",
-      title: lab.name || lab.code,
-      description: lab.department ? `Department: ${lab.department}` : "New lab created",
+    const activities = getActivities();
+    
+    return activities.map((activity) => ({
+      id: activity.id,
+      type: "Visit",
+      title: activity.page,
+      description: `${activity.date} at ${activity.time}`,
+      timestamp: activity.timestamp,
+      path: activity.path
     }));
-
-    const assetEvents = assets.slice(-3).map((asset) => ({
-      id: asset._id,
-      type: "Asset",
-      title: asset.assetTag,
-      description: asset.status || "New asset added",
-    }));
-
-    // Newest last in arrays, so reverse each slice and then merge
-    return [...labEvents.reverse(), ...assetEvents.reverse()];
-  }, [labs, assets]);
+  }, [activityRefresh]);
+  
+  // Refresh activities periodically to show latest
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActivityRefresh(prev => prev + 1);
+    }, 2000); // Check every 2 seconds
+    
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) return <p>Loading dashboard...</p>;
 
@@ -201,7 +206,7 @@ function DashboardPage() {
           <h2>Recent Activity</h2>
           {recentActivity.length === 0 ? (
             <p className="dashboard-activity-empty">
-              Once you start adding labs and assets, the most recent changes will appear here.
+              Your recent page visits will appear here. Navigate to different sections to see your activity.
             </p>
           ) : (
             <ul className="dashboard-activity-list">

@@ -1,21 +1,45 @@
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import Asset from '../models/Asset.js';
+import User from '../models/User.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Helper function to optionally get user from token
+async function getOptionalUser(req) {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) return null;
+    
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId).select('-password');
+    return user;
+  } catch (err) {
+    return null;
+  }
+}
 
 /**
  * GET /api/assets
  * Get all assets with optional filters
  * - labId
  * - status
+ * Technicians only see assets from their assigned lab
  */
 router.get('/', async (req, res) => {
   try {
+    const user = await getOptionalUser(req);
     const { labId, status } = req.query;
     const filter = {};
 
-    if (labId) filter.labId = labId;
+    // If user is a technician, only show assets from their assigned lab
+    if (user && user.role === 'technician' && user.labId) {
+      filter.labId = user.labId;
+    } else if (labId) {
+      filter.labId = labId;
+    }
+    
     if (status) filter.status = status;
 
     const assets = await Asset.find(filter)
