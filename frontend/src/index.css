@@ -466,33 +466,37 @@ select:focus {
 }
 
 .status-pill {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.1rem 0.45rem;
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
   font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
 }
 
+/* Working */
 .status-pill--working {
-  background: rgba(76, 175, 80, 0.12);
-  color: #2e7d32;
+  background-color: #e6f4ea !important;
+  color: #1e7f3f !important;
 }
 
+/* Repair */
 .status-pill--repair {
-  background: rgba(255, 193, 7, 0.16);
-  color: #996400;
+  background-color: #fff4e5 !important;
+  color: #a15c00 !important;
 }
 
+/* Scrapped */
 .status-pill--scrapped {
-  background: rgba(158, 158, 158, 0.2);
-  color: #424242;
+  background-color: #fdecea !important;
+  color: #b3261e !important;
 }
 
+/* Lost */
 .status-pill--lost {
-  background: rgba(244, 67, 54, 0.12);
-  color: #c62828;
+  background-color: #f1f3f4 !important;
+  color: #5f6368 !important;
 }
 
 .filters label {

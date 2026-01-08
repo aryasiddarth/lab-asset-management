@@ -1,243 +1,176 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import mammoth from 'mammoth';
-import Lab from '../models/Lab.js';
-import Asset from '../models/Asset.js';
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import mammoth from "mammoth";
+import Lab from "../models/Lab.js";
+import Asset from "../models/Asset.js";
 
 dotenv.config();
 
 async function importDSE(filePath) {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB");
 
     const result = await mammoth.extractRawText({ path: filePath });
     const text = result.value;
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    const lines = text
+      .split("\n")
+      .map(l => l.trim())
+      .filter(l => l);
 
     let labsCreated = 0;
     let assetsCreated = 0;
     const errors = [];
-    const labMap = new Map();
 
-    let currentLab = null;
+    const labMap = new Map();          // labName -> labId
+    const labCodeMap = new Map();      // labName -> labCode
+    const labSlCounter = new Map();    // labCode -> slNo
+
+    let currentLabName = null;
     let currentLabCode = null;
     let currentEquipmentType = null;
     let currentEquipmentDesc = null;
-    let assetCounter = 1;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
-      // Skip header rows
-      if (line.match(/^(SN|Name of the lab|Name of major equipment|Count|Utilization|attainment)$/i)) {
+
+      // Skip headers
+      if (
+        /^(SN|Name of the lab|Name of major equipment|Count|Utilization|attainment)$/i.test(
+          line
+        )
+      ) {
         continue;
       }
 
-      // Check if it's a serial number (just a digit) followed by lab name
+      // Detect new lab (serial number followed by lab name)
       if (/^\d+$/.test(line) && i + 1 < lines.length) {
         const nextLine = lines[i + 1];
-        // If next line is a lab name, this is a new entry
-        if (nextLine && (nextLine.match(/Lab/i) || nextLine.match(/Research|Development|Virtual Reality|Centre/i))) {
-          // Save previous equipment if any
-          if (currentLab && currentEquipmentDesc && labMap.has(currentLab)) {
-            // Look ahead for count
-            let count = 1;
-            for (let j = i - 1; j >= 0 && j > i - 10; j--) {
-              if (/^\d+$/.test(lines[j])) {
-                count = parseInt(lines[j]);
-                break;
-              }
-            }
-            
-            try {
-              const assetTag = `DSE-${currentLabCode}-${assetCounter++}`;
-              await Asset.findOneAndUpdate(
-                { assetTag },
-                {
-                  assetTag,
-                  labId: labMap.get(currentLab),
-                  status: 'WORKING',
-                  model: {
-                    name: currentEquipmentDesc,
-                    manufacturer: null
-                  },
-                  serialNumber: null,
-                  purchaseDate: null,
-                  warrantyExpiry: null,
-                  remarks: `${currentEquipmentType || ''} - Count: ${count}`
-                },
-                { upsert: true, new: true }
-              );
-              assetsCreated++;
-              console.log(`  Created asset: ${assetTag} - ${currentEquipmentDesc} (Count: ${count})`);
-            } catch (error) {
-              errors.push(`Asset for ${currentLab}: ${error.message}`);
-            }
-          }
-          
-          // Start new lab
-          currentLab = nextLine;
-          // Create proper lab code
-          let labCodeBase = currentLab.replace(/\s+/g, '-').toUpperCase();
-          if (labCodeBase.match(/COMPUTING-LAB/i)) {
-            labCodeBase = labCodeBase.replace(/COMPUTING-LAB-?/i, 'LAB-');
-          } else if (labCodeBase.match(/LAB/i)) {
-            labCodeBase = labCodeBase.replace(/LAB/i, 'LAB-');
-          } else {
-            labCodeBase = 'LAB-' + labCodeBase;
-          }
-          currentLabCode = labCodeBase;
-          
-          // Create lab if not exists
-          if (!labMap.has(currentLab)) {
+
+        if (
+          nextLine &&
+          /Lab|Research|Development|Virtual Reality|Centre/i.test(nextLine)
+        ) {
+          currentLabName = nextLine.trim();
+
+          currentLabCode = currentLabName
+            .replace(/\s+/g, "-")
+            .toUpperCase()
+            .replace(/COMPUTING-LAB/i, "LAB")
+            .replace(/LAB/i, "LAB-");
+
+          if (!labMap.has(currentLabName)) {
             try {
               const lab = await Lab.findOneAndUpdate(
                 { code: currentLabCode },
                 {
                   code: currentLabCode,
-                  name: currentLab,
-                  department: 'DSE',
+                  name: currentLabName,
+                  department: "DSE",
                   location: null,
-                  remarks: 'Imported from DSE.docx'
+                  remarks: "Imported from DSE.docx"
                 },
                 { upsert: true, new: true }
               );
-              labMap.set(currentLab, lab._id);
+
+              labMap.set(currentLabName, lab._id);
+              labCodeMap.set(currentLabName, currentLabCode);
+              labSlCounter.set(currentLabCode, 0);
+
               labsCreated++;
-              console.log(`Created lab: ${currentLabCode} (${currentLab})`);
-            } catch (error) {
-              errors.push(`Lab ${currentLab}: ${error.message}`);
+              console.log(`Created lab: ${currentLabCode}`);
+            } catch (err) {
+              errors.push(`Lab ${currentLabName}: ${err.message}`);
             }
           }
-          
-          // Reset equipment tracking
+
           currentEquipmentType = null;
           currentEquipmentDesc = null;
-          assetCounter = 1; // Reset counter for new lab
-          i++; // Skip the lab name line
+          i++; // skip lab name line
           continue;
         }
       }
 
-      // Check if it's equipment type (contains colon)
-      if (line.includes(':') && currentLab) {
-        // Save previous equipment if we have description and can find count
-        if (currentEquipmentDesc && labMap.has(currentLab)) {
-          // Look for count in next few lines
-          let count = 1;
-          for (let j = i + 1; j < lines.length && j < i + 5; j++) {
-            if (/^\d+$/.test(lines[j])) {
-              count = parseInt(lines[j]);
-              break;
-            }
+      // Equipment line (Type: Description)
+      if (currentLabName && line.includes(":")) {
+        const [type, desc] = line.split(":", 2);
+
+        currentEquipmentType = type.trim();
+        currentEquipmentDesc = desc && desc.trim().length > 5 ? desc.trim() : null;
+
+        // Try next line if description is short
+        if (!currentEquipmentDesc && i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          if (nextLine.length > 10 && !/^\d+$/.test(nextLine)) {
+            currentEquipmentDesc = nextLine.trim();
+            i++;
           }
-          
+        }
+
+        // Look for quantity
+        let quantity = 1;
+        for (let j = i + 1; j < lines.length && j < i + 5; j++) {
+          if (/^\d+$/.test(lines[j])) {
+            quantity = parseInt(lines[j]);
+            break;
+          }
+        }
+
+        if (currentEquipmentDesc && labMap.has(currentLabName)) {
+          const labCode = labCodeMap.get(currentLabName);
+          const slNo = labSlCounter.get(labCode) + 1;
+          labSlCounter.set(labCode, slNo);
+
+          const assetTag = `${labCode}-${slNo}`;
+          const assetId = `${labCode}/ITEM/${slNo}`;
+
           try {
-            const assetTag = `DSE-${currentLabCode}-${assetCounter++}`;
             await Asset.findOneAndUpdate(
               { assetTag },
               {
                 assetTag,
-                labId: labMap.get(currentLab),
-                status: 'WORKING',
-                model: {
-                  name: currentEquipmentDesc,
-                  manufacturer: null
-                },
-                serialNumber: null,
+                slNo,
+                assetId,
+                labId: labMap.get(currentLabName),
+                status: "WORKING",
+                model: currentEquipmentDesc, // ✅ STRING
+                pageNo: 1,
+                quantity,
+                cost: 0,
                 purchaseDate: null,
-                warrantyExpiry: null,
-                remarks: `${currentEquipmentType || ''} - Count: ${count}`
+                remarks: currentEquipmentType
               },
               { upsert: true, new: true }
             );
+
             assetsCreated++;
-            console.log(`  Created asset: ${assetTag} - ${currentEquipmentDesc} (Count: ${count})`);
-          } catch (error) {
-            errors.push(`Asset for ${currentLab}: ${error.message}`);
+            console.log(`  Created asset: ${assetTag}`);
+          } catch (err) {
+            errors.push(`Asset for ${currentLabCode}: ${err.message}`);
           }
         }
-        
-        // Parse equipment type and description
-        const colonIndex = line.indexOf(':');
-        currentEquipmentType = line.substring(0, colonIndex).trim();
-        const descriptionPart = line.substring(colonIndex + 1).trim();
-        
-        // If description is on same line, use it
-        if (descriptionPart && descriptionPart.length > 5) {
-          currentEquipmentDesc = descriptionPart;
-        } else if (i + 1 < lines.length) {
-          const nextLine = lines[i + 1].trim();
-          // Only use next line if it's not a number (count) and not empty
-          if (nextLine && !/^\d+$/.test(nextLine) && nextLine.length > 5) {
-            currentEquipmentDesc = nextLine;
-            i++; // Skip description line
-          }
-        }
-        continue;
-      }
 
-      // If we have equipment type but no description yet, this might be the description
-      if (currentEquipmentType && !currentEquipmentDesc && line.length > 10 && !line.endsWith(':') && !/^\d+$/.test(line) && !line.match(/MTech|Btech|Sem|CSS|HUM/i)) {
-        currentEquipmentDesc = line;
         continue;
       }
     }
 
-    // Process last asset if any
-    if (currentLab && currentEquipmentDesc && labMap.has(currentLab)) {
-      let count = 1;
-      // Look for count in previous lines
-      const lineIndex = lines.length - 1;
-      for (let j = lineIndex; j >= 0 && j > lineIndex - 10; j--) {
-        if (/^\d+$/.test(lines[j])) {
-          count = parseInt(lines[j]);
-          break;
-        }
-      }
-      
-      try {
-        const assetTag = `DSE-${currentLabCode}-${assetCounter++}`;
-        await Asset.findOneAndUpdate(
-          { assetTag },
-          {
-            assetTag,
-            labId: labMap.get(currentLab),
-            status: 'WORKING',
-            model: {
-              name: currentEquipmentDesc,
-              manufacturer: null
-            },
-            serialNumber: null,
-            purchaseDate: null,
-            warrantyExpiry: null,
-            remarks: `${currentEquipmentType || ''} - Count: ${count}`
-          },
-          { upsert: true, new: true }
-        );
-        assetsCreated++;
-      } catch (error) {
-        errors.push(`Asset for ${currentLab}: ${error.message}`);
-      }
-    }
-
-    console.log(`\nImport Summary:`);
+    console.log("\nImport Summary:");
     console.log(`  Labs created: ${labsCreated}`);
     console.log(`  Assets created: ${assetsCreated}`);
-    
-    if (errors.length > 0) {
-      console.log(`\nErrors:`);
-      errors.forEach(err => console.log(`  - ${err}`));
+
+    if (errors.length) {
+      console.log("\nErrors:");
+      errors.forEach(e => console.log(`  - ${e}`));
     }
 
-    console.log('\nImport completed!');
+    console.log("\nImport completed!");
     process.exit(0);
-  } catch (error) {
-    console.error('Error importing DSE file:', error);
+  } catch (err) {
+    console.error("Error importing DSE file:", err);
     process.exit(1);
   }
 }
 
-const filePath = process.argv[2] || './data/DSE.docx';
+const filePath = process.argv[2] || "./data/DSE.docx";
 importDSE(filePath);
