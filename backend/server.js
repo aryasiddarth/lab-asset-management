@@ -5,6 +5,7 @@ import { connectDB } from './config/database.js';
 import authRoutes from './routes/auth.js';
 import labRoutes from './routes/labs.js';
 import assetRoutes from './routes/assets.js';
+import stockRoutes from './routes/stocks.js';
 import importExportRoutes from './routes/importExport.js';
 
 dotenv.config();
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/labs', labRoutes);
 app.use('/api/assets', assetRoutes);
+app.use('/api/stocks', stockRoutes);
 app.use('/api/import', importExportRoutes);
 
 const PORT = process.env.PORT || 5000;
