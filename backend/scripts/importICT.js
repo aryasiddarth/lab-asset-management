@@ -1,183 +1,166 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
-import mammoth from 'mammoth';
-import Lab from '../models/Lab.js';
-import Asset from '../models/Asset.js';
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import mammoth from "mammoth";
+import Lab from "../models/Lab.js";
+import Asset from "../models/Asset.js";
 
 dotenv.config();
 
 async function importICT(filePath) {
   try {
     await mongoose.connect(process.env.MONGODB_URI);
-    console.log('Connected to MongoDB');
+    console.log("Connected to MongoDB");
 
     const result = await mammoth.extractRawText({ path: filePath });
-    const text = result.value;
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+    const lines = result.value
+      .split("\n")
+      .map(l => l.trim())
+      .filter(l => l);
 
     let labsCreated = 0;
     let assetsCreated = 0;
     const errors = [];
-    const labMap = new Map();
 
-    let currentLab = null;
+    const labMap = new Map();        // labName -> labId
+    const labCodeMap = new Map();    // labName -> labCode
+    const labSlCounter = new Map();  // labCode -> slNo
+
+    let currentLabName = null;
+    let currentLabCode = null;
     let currentBatchSize = null;
-    let currentEquipment = [];
+    let equipmentList = [];
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
-      // Skip header rows
-      if (line.match(/^(Sr\.?\s*No|Name of the Laboratory|No\.?\s*of students|Batch Size|Name of the Important equipment|Weekly utilization|BTech|MTech)/i)) {
+
+      // Skip headers
+      if (
+        /^(Sr\.?\s*No|Name of the Laboratory|No\.?\s*of students|Batch Size|Name of the Important equipment|Weekly utilization|BTech|MTech)$/i.test(
+          line
+        )
+      ) {
         continue;
       }
 
-      // Check if it's a lab number (starts with digit and dot)
+      // Detect new lab (e.g. "1.")
       if (/^\d+\./.test(line)) {
-        // Next lines should be lab name, batch size, equipment
-        if (i + 1 < lines.length) {
-          currentLab = lines[i + 1].trim();
-          i++;
-        }
-        if (i + 1 < lines.length && /^\d+$/.test(lines[i + 1])) {
-          currentBatchSize = parseInt(lines[i + 1]);
-          i++;
-        }
-        currentEquipment = [];
+        currentLabName = null;
+        currentBatchSize = null;
+        equipmentList = [];
         continue;
       }
 
-      // Check if it's a lab name (contains "Lab" or "Computing")
-      if ((line.match(/Lab/i) || line.match(/Computing/i)) && !currentLab) {
-        currentLab = line;
+      // Lab name
+      if (!currentLabName && /Lab|Computing/i.test(line)) {
+        currentLabName = line.trim();
+        currentLabCode = currentLabName
+          .replace(/\s+/g, "-")
+          .toUpperCase()
+          .replace(/LAB/i, "LAB-");
+
+        if (!labMap.has(currentLabName)) {
+          try {
+            const lab = await Lab.findOneAndUpdate(
+              { code: currentLabCode },
+              {
+                code: currentLabCode,
+                name: currentLabName,
+                department: "ICT",
+                location: null,
+                remarks: "Imported from ICT.docx"
+              },
+              { upsert: true, new: true }
+            );
+
+            labMap.set(currentLabName, lab._id);
+            labCodeMap.set(currentLabName, currentLabCode);
+            labSlCounter.set(currentLabCode, 0);
+
+            labsCreated++;
+            console.log(`Created lab: ${currentLabCode}`);
+          } catch (err) {
+            errors.push(`Lab ${currentLabName}: ${err.message}`);
+          }
+        }
         continue;
       }
 
-      // Check if it's batch size
-      if (/^\d+$/.test(line) && line.length <= 3 && !currentBatchSize) {
+      // Batch size
+      if (!currentBatchSize && /^\d+$/.test(line) && line.length <= 3) {
         currentBatchSize = parseInt(line);
         continue;
       }
 
-      // Equipment descriptions are usually longer lines
-      if (line.length > 20 && !/^\d+$/.test(line) && !line.match(/^(DS|DISL|ISL|POSL|NIL)$/i)) {
-        currentEquipment.push(line);
+      // Equipment line
+      if (line.length > 20 && !/^\d+$/.test(line)) {
+        equipmentList.push(line);
         continue;
       }
 
-      // When we hit a number (likely next lab or count), process current lab
-      if ((/^\d+\./.test(line) || /^\d+$/.test(line)) && currentLab && currentLab !== '') {
-        // Create lab
-        if (!labMap.has(currentLab)) {
+      // When next lab starts or file ends → insert assets
+      if (
+        currentLabName &&
+        equipmentList.length > 0 &&
+        (i === lines.length - 1 || /^\d+\./.test(line))
+      ) {
+        const labCode = labCodeMap.get(currentLabName);
+
+        for (const equipment of equipmentList) {
+          if (equipment.length < 5) continue;
+
+          const slNo = labSlCounter.get(labCode) + 1;
+          labSlCounter.set(labCode, slNo);
+
+          const assetTag = `${labCode}-${slNo}`;
+          const assetId = `${labCode}/ITEM/${slNo}`;
+
           try {
-            const labCode = currentLab.replace(/\s+/g, '-').toUpperCase().replace(/LAB/i, 'LAB-');
-            const lab = await Lab.findOneAndUpdate(
-              { code: labCode },
-              {
-                code: labCode,
-                name: currentLab,
-                department: 'ICT',
-                location: null,
-                remarks: currentBatchSize ? `Batch Size: ${currentBatchSize}` : 'Imported from ICT.docx'
-              },
-              { upsert: true, new: true }
-            );
-            labMap.set(currentLab, lab._id);
-            labsCreated++;
-            console.log(`Created lab: ${labCode}`);
-          } catch (error) {
-            errors.push(`Lab ${currentLab}: ${error.message}`);
-          }
-        }
-
-        // Create assets for equipment
-        if (labMap.has(currentLab) && currentEquipment.length > 0) {
-          for (const equipment of currentEquipment) {
-            if (equipment.length > 5) {
-              try {
-                const assetTag = `${labMap.get(currentLab)}-${assetsCreated + 1}`;
-                await Asset.findOneAndUpdate(
-                  { assetTag },
-                  {
-                    assetTag,
-                    labId: labMap.get(currentLab),
-                    status: 'WORKING',
-                    model: {
-                      name: equipment,
-                      manufacturer: null
-                    },
-                    serialNumber: null,
-                    purchaseDate: null,
-                    warrantyExpiry: null,
-                    remarks: currentBatchSize ? `Batch Size: ${currentBatchSize}` : null
-                  },
-                  { upsert: true, new: true }
-                );
-                assetsCreated++;
-              } catch (error) {
-                errors.push(`Asset for ${currentLab}: ${error.message}`);
-              }
-            }
-          }
-        }
-
-        // Reset for next lab
-        if (/^\d+\./.test(line)) {
-          currentLab = null;
-          currentBatchSize = null;
-          currentEquipment = [];
-        }
-      }
-    }
-
-    // Process last lab
-    if (currentLab && labMap.has(currentLab) && currentEquipment.length > 0) {
-      for (const equipment of currentEquipment) {
-        if (equipment.length > 5) {
-          try {
-            const assetTag = `${labMap.get(currentLab)}-${assetsCreated + 1}`;
             await Asset.findOneAndUpdate(
               { assetTag },
               {
                 assetTag,
-                labId: labMap.get(currentLab),
-                status: 'WORKING',
-                model: {
-                  name: equipment,
-                  manufacturer: null
-                },
-                serialNumber: null,
+                slNo,
+                assetId,
+                labId: labMap.get(currentLabName),
+                status: "WORKING",
+                model: equipment,     // ✅ STRING
+                pageNo: 1,
+                quantity: 1,
+                cost: 0,
                 purchaseDate: null,
-                warrantyExpiry: null,
-                remarks: currentBatchSize ? `Batch Size: ${currentBatchSize}` : null
+                remarks: currentBatchSize
+                  ? `Batch Size: ${currentBatchSize}`
+                  : "Imported from ICT.docx"
               },
               { upsert: true, new: true }
             );
+
             assetsCreated++;
-          } catch (error) {
-            errors.push(`Asset for ${currentLab}: ${error.message}`);
+          } catch (err) {
+            errors.push(`Asset for ${currentLabCode}: ${err.message}`);
           }
         }
+
+        equipmentList = [];
       }
     }
 
-    console.log(`\nImport Summary:`);
+    console.log("\nImport Summary:");
     console.log(`  Labs created: ${labsCreated}`);
     console.log(`  Assets created: ${assetsCreated}`);
-    
-    if (errors.length > 0) {
-      console.log(`\nErrors:`);
-      errors.forEach(err => console.log(`  - ${err}`));
+
+    if (errors.length) {
+      console.log("\nErrors:");
+      errors.forEach(e => console.log(`  - ${e}`));
     }
 
-    console.log('\nImport completed!');
+    console.log("\nImport completed!");
     process.exit(0);
-  } catch (error) {
-    console.error('Error importing ICT file:', error);
+  } catch (err) {
+    console.error("Error importing ICT file:", err);
     process.exit(1);
   }
 }
 
-const filePath = process.argv[2] || './data/ICT.docx';
+const filePath = process.argv[2] || "./data/ICT.docx";
 importICT(filePath);
-

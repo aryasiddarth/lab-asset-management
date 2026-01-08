@@ -1,173 +1,167 @@
-import express from 'express';
-import jwt from 'jsonwebtoken';
-import Asset from '../models/Asset.js';
-import User from '../models/User.js';
-import { authenticate } from '../middleware/auth.js';
+import express from "express";
+import jwt from "jsonwebtoken";
+import Asset from "../models/Asset.js";
+import LabAsset from "../models/LabAsset.js";
+import User from "../models/User.js";
+import { authenticate } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Helper function to optionally get user from token
+/**
+ * Helper: optionally get user from JWT (for role-based filtering)
+ */
 async function getOptionalUser(req) {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    const token = req.headers.authorization?.replace("Bearer ", "");
     if (!token) return null;
-    
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.userId).select('-password');
+    const user = await User.findById(decoded.userId).select("-password");
     return user;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
 
 /**
  * GET /api/assets
- * Get all assets with optional filters
- * - labId
- * - status
- * Technicians only see assets from their assigned lab
+ * Inventory overview
+ * Returns:
+ * - total quantity
+ * - assigned quantity
+ * - remaining quantity
  */
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const user = await getOptionalUser(req);
-    const { labId, status } = req.query;
-    const filter = {};
 
-    // If user is a technician, only show assets from their assigned lab
-    if (user && user.role === 'technician' && user.labId) {
-      filter.labId = user.labId;
-    } else if (labId) {
-      filter.labId = labId;
-    }
-    
-    if (status) filter.status = status;
+    const assets = await Asset.find().sort({ slNo: 1 });
 
-    const assets = await Asset.find(filter)
-      .populate('labId', 'name code department')
-      .sort({ assetTag: 1 });
+    const result = await Promise.all(
+      assets.map(async (asset) => {
+        // If technician → show only assets allocated to their lab
+        if (user?.role === "technician" && user.labId) {
+          const assignedToLab = await LabAsset.findOne({
+            assetId: asset._id,
+            labId: user.labId
+          });
 
-    const transformedAssets = assets.map(asset => ({
-      _id: asset._id,
-      assetTag: asset.assetTag,
-      labId: asset.labId ? asset.labId._id : null,
-      lab: asset.labId || null,
-      status: asset.status,
-      model: asset.model,
-      serialNumber: asset.serialNumber,
-      purchaseDate: asset.purchaseDate,
-      warrantyExpiry: asset.warrantyExpiry,
-      remarks: asset.remarks
-    }));
+          if (!assignedToLab) return null;
+        }
 
-    res.json(transformedAssets);
-  } catch (error) {
-    console.error('Error fetching assets:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
+        const assignedAgg = await LabAsset.aggregate([
+          { $match: { assetId: asset._id } },
+          { $group: { _id: null, total: { $sum: "$quantityAssigned" } } }
+        ]);
 
-/**
- * GET /api/assets/unassigned
- * Get all stock assets (not assigned to any lab)
- */
-router.get('/unassigned', async (req, res) => {
-  try {
-    const assets = await Asset.find({ labId: null })
-      .sort({ assetTag: 1 });
+        const assignedQty = assignedAgg[0]?.total || 0;
 
-    const transformedAssets = assets.map(asset => ({
-      _id: asset._id,
-      assetTag: asset.assetTag,
-      status: asset.status,
-      model: asset.model,
-      serialNumber: asset.serialNumber
-    }));
+        return {
+          _id: asset._id,
+          slNo: asset.slNo,
+          assetId: asset.assetId,
+          entryDate: asset.entryDate,
+          purchaseDate: asset.purchaseDate,
+          pageNo: asset.pageNo,
+          model: asset.model,
+          totalQuantity: asset.quantity,
+          assignedQuantity: assignedQty,
+          remainingQuantity: asset.quantity - assignedQty,
+          cost: asset.cost,
+          remarks: asset.remarks
+        };
+      })
+    );
 
-    res.json(transformedAssets);
-  } catch (error) {
-    console.error('Error fetching unassigned assets:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.json(result.filter(Boolean));
+  } catch (err) {
+    console.error("Error fetching assets:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 /**
  * GET /api/assets/:id
- * Get single asset
+ * Single asset with lab allocations
  */
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
-    const asset = await Asset.findById(req.params.id)
-      .populate('labId', 'name code department location');
-
+    const asset = await Asset.findById(req.params.id);
     if (!asset) {
-      return res.status(404).json({ message: 'Asset not found' });
+      return res.status(404).json({ message: "Asset not found" });
     }
+
+    const allocations = await LabAsset.find({ assetId: asset._id })
+      .populate("labId", "name code department");
+
+    const assignedQty = allocations.reduce(
+      (sum, a) => sum + a.quantityAssigned,
+      0
+    );
 
     res.json({
       _id: asset._id,
-      assetTag: asset.assetTag,
-      labId: asset.labId ? asset.labId._id : null,
-      lab: asset.labId || null,
-      status: asset.status,
-      model: asset.model,
-      serialNumber: asset.serialNumber,
+      slNo: asset.slNo,
+      assetId: asset.assetId,
+      entryDate: asset.entryDate,
       purchaseDate: asset.purchaseDate,
-      warrantyExpiry: asset.warrantyExpiry,
-      remarks: asset.remarks
+      pageNo: asset.pageNo,
+      model: asset.model,
+      totalQuantity: asset.quantity,
+      assignedQuantity: assignedQty,
+      remainingQuantity: asset.quantity - assignedQty,
+      cost: asset.cost,
+      remarks: asset.remarks,
+      allocations: allocations.map((a) => ({
+        lab: a.labId,
+        quantityAssigned: a.quantityAssigned
+      }))
     });
-  } catch (error) {
-    console.error('Error fetching asset:', error);
-    res.status(500).json({ message: 'Server error' });
+  } catch (err) {
+    console.error("Error fetching asset:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 /**
  * POST /api/assets
- * Create asset (GLOBAL STOCK — no lab assignment)
+ * Create inventory asset (NO LAB)
  */
-router.post('/', authenticate, async (req, res) => {
+router.post("/", authenticate, async (req, res) => {
   try {
     const {
-      assetTag,
-      status,
-      model,
-      serialNumber,
+      slNo,
+      assetId,
+      entryDate,
       purchaseDate,
-      warrantyExpiry,
+      pageNo,
+      model,
+      quantity,
+      cost,
       remarks
     } = req.body;
 
-    const asset = new Asset({
-      assetTag,
-      status,
-      model,
-      serialNumber,
+    const asset = await Asset.create({
+      slNo,
+      assetId,
+      entryDate,
       purchaseDate,
-      warrantyExpiry,
-      remarks,
-      labId: null // 🔑 IMPORTANT
+      pageNo,
+      model,
+      quantity,
+      cost,
+      remarks
     });
 
-    await asset.save();
-
-    res.status(201).json({
-      _id: asset._id,
-      assetTag: asset.assetTag,
-      labId: null,
-      lab: null,
-      status: asset.status,
-      model: asset.model,
-      serialNumber: asset.serialNumber,
-      purchaseDate: asset.purchaseDate,
-      warrantyExpiry: asset.warrantyExpiry,
-      remarks: asset.remarks
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return res.status(400).json({ message: 'Asset tag already exists' });
+    res.status(201).json(asset);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "SL No or Asset ID already exists"
+      });
     }
-    console.error('Error creating asset:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Error creating asset:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

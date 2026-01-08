@@ -1,19 +1,33 @@
 import axiosClient from "./axiosClient.js";
 
+/**
+ * Import assets from Excel
+ *
+ * Backend is expected to:
+ * - Create ONE Asset per row
+ * - Use quantity column (NOT per-unit creation)
+ * - Ignore lab assignment (labs handled separately)
+ */
 export async function importExcel(file) {
   const formData = new FormData();
   formData.append("file", file);
 
   const res = await axiosClient.post("/import/excel", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
   });
+
   return res.data;
 }
 
-export function exportExcel(params = {}) {
-  // Download Excel file
+/**
+ * Export inventory to Excel
+ * Should export:
+ * SL No, Asset ID, Model, Quantity, Assigned, Remaining, Page No, Cost, Remarks
+ */
+export async function exportExcel() {
   return axiosClient.get("/export/excel", {
-    params,
-    responseType: "blob",
+    responseType: "blob"
   });
 }

@@ -1,207 +1,173 @@
-import express from 'express';
-import multer from 'multer';
-import ExcelJS from 'exceljs';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import Lab from '../models/Lab.js';
-import Asset from '../models/Asset.js';
-import { authenticate } from '../middleware/auth.js';
+import express from "express";
+import multer from "multer";
+import ExcelJS from "exceljs";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import Asset from "../models/Asset.js";
+import Lab from "../models/Lab.js";
+import LabAsset from "../models/LabAsset.js";
+import { authenticate } from "../middleware/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads');
+// uploads/
+const uploadsDir = path.join(__dirname, "../uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 const upload = multer({ dest: uploadsDir });
 
-// Import Excel file
-router.post('/excel', authenticate, upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
+/**
+ * POST /import/excel
+ * One row = ONE inventory asset
+ */
+router.post(
+  "/excel",
+  authenticate,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(req.file.path);
-    
-    let labsImported = 0;
-    let assetsImported = 0;
-    const errors = [];
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.readFile(req.file.path);
 
-    // Import Labs
-    const labsWorksheet = workbook.getWorksheet('Labs');
-    if (labsWorksheet) {
-      for (let rowNumber = 2; rowNumber <= labsWorksheet.rowCount; rowNumber++) {
-        const row = labsWorksheet.getRow(rowNumber);
-        const lab = {
-          code: row.getCell(1).value,
-          name: row.getCell(2).value,
-          department: row.getCell(3).value,
-          location: row.getCell(4).value || null,
-          remarks: row.getCell(5).value || null
-        };
-        
-        if (lab.code && lab.name && lab.department) {
-          try {
-            await Lab.findOneAndUpdate(
-              { code: lab.code },
-              lab,
-              { upsert: true, new: true }
-            );
-            labsImported++;
-          } catch (error) {
-            errors.push(`Lab ${lab.code}: ${error.message}`);
+      const sheet = workbook.getWorksheet(1);
+      if (!sheet) {
+        return res.status(400).json({ message: "Invalid Excel file" });
+      }
+
+      let imported = 0;
+      const errors = [];
+
+      /**
+       * Expected columns:
+       * SL No | Asset ID | Entry Date | Purchase Date | Page No |
+       * Model | Quantity | Cost | Remarks
+       */
+      for (let i = 2; i <= sheet.rowCount; i++) {
+        const row = sheet.getRow(i);
+
+        try {
+          const asset = {
+            slNo: Number(row.getCell(1).value),
+            assetId: row.getCell(2).value?.toString(),
+            entryDate: row.getCell(3).value
+              ? new Date(row.getCell(3).value)
+              : null,
+            purchaseDate: row.getCell(4).value
+              ? new Date(row.getCell(4).value)
+              : null,
+            pageNo: Number(row.getCell(5).value),
+            model: row.getCell(6).value?.toString(),
+            quantity: Number(row.getCell(7).value),
+            cost: Number(row.getCell(8).value),
+            remarks: row.getCell(9).value?.toString() || null
+          };
+
+          if (!asset.assetId || !asset.quantity) {
+            errors.push(`Row ${i}: Missing assetId or quantity`);
+            continue;
           }
+
+          await Asset.findOneAndUpdate(
+            { assetId: asset.assetId },
+            asset,
+            { upsert: true, new: true }
+          );
+
+          imported++;
+        } catch (err) {
+          errors.push(`Row ${i}: ${err.message}`);
         }
       }
-    }
 
-    // Import Assets
-    const assetsWorksheet = workbook.getWorksheet('Assets');
-    if (assetsWorksheet) {
-      for (let rowNumber = 2; rowNumber <= assetsWorksheet.rowCount; rowNumber++) {
-        const row = assetsWorksheet.getRow(rowNumber);
-        const asset = {
-          assetTag: row.getCell(1).value,
-          labCode: row.getCell(2).value,
-          status: row.getCell(3).value || 'WORKING',
-          modelName: row.getCell(4).value || null,
-          manufacturer: row.getCell(5).value || null,
-          serialNumber: row.getCell(6).value || null,
-          purchaseDate: row.getCell(7).value || null,
-          warrantyExpiry: row.getCell(8).value || null,
-          remarks: row.getCell(9).value || null
-        };
-        
-        if (asset.assetTag && asset.labCode) {
-          try {
-            const lab = await Lab.findOne({ code: asset.labCode });
-            if (!lab) {
-              errors.push(`Asset ${asset.assetTag}: Lab ${asset.labCode} not found`);
-              continue;
-            }
+      fs.unlinkSync(req.file.path);
 
-            await Asset.findOneAndUpdate(
-              { assetTag: asset.assetTag },
-              {
-                assetTag: asset.assetTag,
-                labId: lab._id,
-                status: asset.status || 'WORKING',
-                model: {
-                  name: asset.modelName || null,
-                  manufacturer: asset.manufacturer || null
-                },
-                serialNumber: asset.serialNumber || null,
-                purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate) : null,
-                warrantyExpiry: asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null,
-                remarks: asset.remarks || null
-              },
-              { upsert: true, new: true }
-            );
-            assetsImported++;
-          } catch (error) {
-            errors.push(`Asset ${asset.assetTag}: ${error.message}`);
-          }
-        }
+      res.json({
+        message: "Import completed",
+        assetsImported: imported,
+        errors: errors.length ? errors : undefined
+      });
+    } catch (err) {
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
       }
-    }
 
-    // Clean up uploaded file
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+      console.error("Import error:", err);
+      res.status(500).json({ message: "Import failed" });
     }
-
-    res.json({
-      message: 'Import completed',
-      labsImported,
-      assetsImported,
-      errors: errors.length > 0 ? errors : undefined
-    });
-  } catch (error) {
-    // Clean up uploaded file on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
-    console.error('Import error:', error);
-    res.status(500).json({ message: 'Import failed', error: error.message });
   }
-});
+);
 
-// Export Excel file
-router.get('/excel', authenticate, async (req, res) => {
+/**
+ * GET /export/excel
+ * Exports inventory with assigned & remaining
+ */
+router.get("/excel", authenticate, async (req, res) => {
   try {
-    const labs = await Lab.find().sort({ code: 1 });
-    const assets = await Asset.find()
-      .populate('labId', 'code')
-      .sort({ assetTag: 1 });
+    const assets = await Asset.find().sort({ slNo: 1 });
 
-    // Create workbook
     const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet("Inventory");
 
-    // Labs sheet
-    const labsSheet = workbook.addWorksheet('Labs');
-    labsSheet.columns = [
-      { header: 'Code', key: 'code', width: 15 },
-      { header: 'Name', key: 'name', width: 30 },
-      { header: 'Department', key: 'department', width: 20 },
-      { header: 'Location', key: 'location', width: 25 },
-      { header: 'Remarks', key: 'remarks', width: 30 }
+    sheet.columns = [
+      { header: "SL No", key: "slNo", width: 10 },
+      { header: "Asset ID", key: "assetId", width: 20 },
+      { header: "Model", key: "model", width: 25 },
+      { header: "Total Quantity", key: "quantity", width: 15 },
+      { header: "Assigned", key: "assigned", width: 15 },
+      { header: "Remaining", key: "remaining", width: 15 },
+      { header: "Page No", key: "pageNo", width: 10 },
+      { header: "Cost", key: "cost", width: 15 },
+      { header: "Remarks", key: "remarks", width: 30 }
     ];
-    labs.forEach(lab => {
-      labsSheet.addRow({
-        code: lab.code,
-        name: lab.name,
-        department: lab.department,
-        location: lab.location || '',
-        remarks: lab.remarks || ''
-      });
-    });
 
-    // Assets sheet
-    const assetsSheet = workbook.addWorksheet('Assets');
-    assetsSheet.columns = [
-      { header: 'Asset Tag', key: 'assetTag', width: 15 },
-      { header: 'Lab Code', key: 'labCode', width: 15 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Model Name', key: 'modelName', width: 25 },
-      { header: 'Manufacturer', key: 'manufacturer', width: 20 },
-      { header: 'Serial Number', key: 'serialNumber', width: 20 },
-      { header: 'Purchase Date', key: 'purchaseDate', width: 15 },
-      { header: 'Warranty Expiry', key: 'warrantyExpiry', width: 15 },
-      { header: 'Remarks', key: 'remarks', width: 30 }
-    ];
-    assets.forEach(asset => {
-      assetsSheet.addRow({
-        assetTag: asset.assetTag,
-        labCode: asset.labId?.code || '',
-        status: asset.status,
-        modelName: asset.model?.name || '',
-        manufacturer: asset.model?.manufacturer || '',
-        serialNumber: asset.serialNumber || '',
-        purchaseDate: asset.purchaseDate || '',
-        warrantyExpiry: asset.warrantyExpiry || '',
-        remarks: asset.remarks || ''
-      });
-    });
+    for (const asset of assets) {
+      const assignedAgg = await LabAsset.aggregate([
+        { $match: { assetId: asset._id } },
+        { $group: { _id: null, total: { $sum: "$quantityAssigned" } } }
+      ]);
 
-    // Generate buffer
+      const assigned = assignedAgg[0]?.total || 0;
+      const remaining = asset.quantity - assigned;
+
+      sheet.addRow({
+        slNo: asset.slNo,
+        assetId: asset.assetId,
+        model: asset.model,
+        quantity: asset.quantity,
+        assigned,
+        remaining,
+        pageNo: asset.pageNo,
+        cost: asset.cost,
+        remarks: asset.remarks || ""
+      });
+    }
+
     const buffer = await workbook.xlsx.writeBuffer();
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename=assets.xlsx');
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=inventory.xlsx"
+    );
+
     res.send(buffer);
-  } catch (error) {
-    console.error('Export error:', error);
-    res.status(500).json({ message: 'Export failed', error: error.message });
+  } catch (err) {
+    console.error("Export error:", err);
+    res.status(500).json({ message: "Export failed" });
   }
 });
 
 export default router;
-

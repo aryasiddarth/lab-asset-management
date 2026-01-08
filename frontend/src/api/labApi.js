@@ -5,20 +5,28 @@ export async function getLabs() {
   return res.data;
 }
 
-export async function getLabById(id) {
-  const res = await axiosClient.get(`/labs/${id}`);
+export async function getLabById(labId) {
+  const res = await axiosClient.get(`/labs/${labId}`);
   return res.data;
 }
 
-export async function createLab(payload) {
-  const res = await axiosClient.post("/labs", payload);
+export async function getLabAssets(labId) {
+  const res = await axiosClient.get(`/labs/${labId}/assets`);
   return res.data;
 }
 
-export async function assignAsset(labId, assetId) {
+export async function assignAsset(labId, assetId, quantity) {
   const res = await axiosClient.post(`/labs/${labId}/assign-asset`, {
     assetId,
+    quantity
   });
   return res.data;
 }
 
+export async function unassignAsset(labId, assetId, quantity) {
+  const res = await axiosClient.post(`/labs/${labId}/unassign-asset`, {
+    assetId,
+    quantity
+  });
+  return res.data;
+}
