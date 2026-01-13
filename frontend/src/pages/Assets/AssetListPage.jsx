@@ -43,7 +43,7 @@ function AssetListPage() {
   const [exporting, setExporting] = useState(false);
 
   const [newAsset, setNewAsset] = useState({
-    assetId: "",
+    assetTag: "",        // ADDED: assetTag field
     model: "",
     quantity: "",
     pageNo: "",
@@ -88,8 +88,9 @@ function AssetListPage() {
           : null
       });
 
+      // Reset form with new fields
       setNewAsset({
-        assetId: "",
+        assetTag: "",      // ADDED: Reset assetTag
         model: "",
         quantity: "",
         pageNo: "",
@@ -152,19 +153,21 @@ function AssetListPage() {
 
       <div className="page-columns">
         <section className="page-main">
+          {/* ADDED: Table header for Asset Tag and SL No */}
           {assets.length === 0 ? (
             <p>No assets available.</p>
           ) : (
+            <div className="table-responsive">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Asset ID</th>
+                  <th>Asset Tag</th>
+                  <th>Page No</th>
                   <th>Model</th>
                   <th>Status</th>
                   <th>Total</th>
                   <th>Assigned</th>
                   <th>Remaining</th>
-                  <th>Page No</th>
                   <th>Cost</th>
                   <th>Remarks</th>
                 </tr>
@@ -180,7 +183,8 @@ function AssetListPage() {
 
                   return (
                     <tr key={a._id}>
-                      <td>{a.assetId}</td>
+                      <td className="font-mono">{a.assetTag || "-"}</td>
+                      <td>{a.pageNo}</td>
                       <td>{a.model}</td>
                       <td>
                         <span className={getStatusClass(a.status)}>
@@ -190,7 +194,6 @@ function AssetListPage() {
                       <td>{total}</td>
                       <td>{assigned}</td>
                       <td>{remaining}</td>
-                      <td>{a.pageNo}</td>
                       <td>{a.cost}</td>
                       <td>{a.remarks || "-"}</td>
                     </tr>
@@ -198,25 +201,35 @@ function AssetListPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </section>
 
         <aside className="page-aside">
           <h2>Add Asset</h2>
           <form onSubmit={handleCreate} className="form-vertical">
+            {/* ADDED: Asset Tag field */}
             <label>
-              Asset ID
+              Asset Tag *
               <input
-                value={newAsset.assetId}
+                value={newAsset.assetTag}
                 onChange={(e) =>
-                  setNewAsset((p) => ({ ...p, assetId: e.target.value }))
+                  setNewAsset((p) => ({ ...p, assetTag: e.target.value }))
                 }
+                placeholder="e.g., CL-1-1"
                 required
               />
+              <small className="text-gray-500 text-xs mt-1 block">
+                Unique identifier for the asset
+              </small>
             </label>
 
+            {/* SL No removed: field no longer used */}
+
+            {/* Asset ID removed: using Asset Tag instead */}
+
             <label>
-              Model
+              Model *
               <input
                 value={newAsset.model}
                 onChange={(e) =>
@@ -227,37 +240,41 @@ function AssetListPage() {
             </label>
 
             <label>
-              Quantity
+              Quantity *
               <input
                 type="number"
                 value={newAsset.quantity}
                 onChange={(e) =>
                   setNewAsset((p) => ({ ...p, quantity: e.target.value }))
                 }
+                min="1"
                 required
               />
             </label>
 
             <label>
-              Page No
+              Page No *
               <input
                 type="number"
                 value={newAsset.pageNo}
                 onChange={(e) =>
                   setNewAsset((p) => ({ ...p, pageNo: e.target.value }))
                 }
+                min="1"
                 required
               />
             </label>
 
             <label>
-              Cost
+              Cost *
               <input
                 type="number"
                 value={newAsset.cost}
                 onChange={(e) =>
                   setNewAsset((p) => ({ ...p, cost: e.target.value }))
                 }
+                min="0"
+                step="0.01"
                 required
               />
             </label>
@@ -313,6 +330,14 @@ function AssetListPage() {
             </label>
 
             {error && <div className="error-text">{error}</div>}
+
+            <div className="text-xs text-gray-600 mb-3">
+              <p className="font-semibold">Note:</p>
+              <ul className="list-disc pl-4 mt-1">
+                <li>Fields marked with * are required</li>
+                <li>Asset Tag must be unique</li>
+              </ul>
+            </div>
 
             <button className="btn btn-primary">Create Asset</button>
           </form>

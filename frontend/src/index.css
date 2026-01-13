@@ -159,8 +159,27 @@ a {
 
 .table th,
 .table td {
-  padding: 0.5rem 0.6rem;
+  padding: 0.6rem 0.8rem;
   border-bottom: 1px solid #ecebea;
+  vertical-align: middle;
+}
+
+/* Responsive table wrapper for wide tables */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+}
+
+/* Ensure table fills container and headers align with cells */
+.table {
+  width: 100%;
+  table-layout: auto;
+  box-sizing: border-box;
+}
+
+.table th, .table td {
+  box-sizing: border-box;
 }
 
 .table th {
@@ -201,6 +220,11 @@ a {
   font-size: 1.8rem;
   font-weight: 600;
   margin-top: 0.5rem;
+}
+
+/* Slightly smaller numbers for dashboard stat cards */
+.dashboard-stat-card .card-number {
+  font-size: 1.45rem;
 }
 
 .dashboard-page {
@@ -373,6 +397,13 @@ a {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Allow recent activity to show more items and scroll when needed */
+.dashboard-activity-list {
+  max-height: 420px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
 }
 
 .dashboard-activity-item {

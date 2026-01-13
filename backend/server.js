@@ -14,7 +14,7 @@ connectDB();
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: true })); // For parsing application/x-www-form-urlencoded
 app.use('/api/auth', authRoutes);
 app.use('/api/labs', labRoutes);
 app.use('/api/assets', assetRoutes);

@@ -5,7 +5,6 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import Asset from "../models/Asset.js";
-import Lab from "../models/Lab.js";
 import LabAsset from "../models/LabAsset.js";
 import { authenticate } from "../middleware/auth.js";
 
@@ -25,6 +24,9 @@ const upload = multer({ dest: uploadsDir });
 /**
  * POST /import/excel
  * One row = ONE inventory asset
+ * Expected columns (1-based index):
+ * Asset Tag | Entry Date | Purchase Date | Page No |
+ * Model | Quantity | Cost | Remarks
  */
 router.post(
   "/excel",
@@ -47,38 +49,32 @@ router.post(
       let imported = 0;
       const errors = [];
 
-      /**
-       * Expected columns:
-       * SL No | Asset ID | Entry Date | Purchase Date | Page No |
-       * Model | Quantity | Cost | Remarks
-       */
       for (let i = 2; i <= sheet.rowCount; i++) {
         const row = sheet.getRow(i);
 
         try {
           const asset = {
-            slNo: Number(row.getCell(1).value),
-            assetId: row.getCell(2).value?.toString(),
-            entryDate: row.getCell(3).value
+            assetTag: row.getCell(1).value?.toString(),
+            entryDate: row.getCell(2).value
+              ? new Date(row.getCell(2).value)
+              : null,
+            purchaseDate: row.getCell(3).value
               ? new Date(row.getCell(3).value)
               : null,
-            purchaseDate: row.getCell(4).value
-              ? new Date(row.getCell(4).value)
-              : null,
-            pageNo: Number(row.getCell(5).value),
-            model: row.getCell(6).value?.toString(),
-            quantity: Number(row.getCell(7).value),
-            cost: Number(row.getCell(8).value),
-            remarks: row.getCell(9).value?.toString() || null
+            pageNo: Number(row.getCell(4).value),
+            model: row.getCell(5).value?.toString(),
+            quantity: Number(row.getCell(6).value),
+            cost: Number(row.getCell(7).value),
+            remarks: row.getCell(8).value?.toString() || null
           };
 
-          if (!asset.assetId || !asset.quantity) {
-            errors.push(`Row ${i}: Missing assetId or quantity`);
+          if (!asset.assetTag || !asset.quantity) {
+            errors.push(`Row ${i}: Missing assetTag or quantity`);
             continue;
           }
 
           await Asset.findOneAndUpdate(
-            { assetId: asset.assetId },
+            { assetTag: asset.assetTag },
             asset,
             { upsert: true, new: true }
           );
@@ -113,14 +109,13 @@ router.post(
  */
 router.get("/excel", authenticate, async (req, res) => {
   try {
-    const assets = await Asset.find().sort({ slNo: 1 });
+    const assets = await Asset.find().sort({ assetTag: 1, createdAt: 1 });
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet("Inventory");
 
     sheet.columns = [
-      { header: "SL No", key: "slNo", width: 10 },
-      { header: "Asset ID", key: "assetId", width: 20 },
+      { header: "Asset Tag", key: "assetTag", width: 20 },
       { header: "Model", key: "model", width: 25 },
       { header: "Total Quantity", key: "quantity", width: 15 },
       { header: "Assigned", key: "assigned", width: 15 },
@@ -140,8 +135,7 @@ router.get("/excel", authenticate, async (req, res) => {
       const remaining = asset.quantity - assigned;
 
       sheet.addRow({
-        slNo: asset.slNo,
-        assetId: asset.assetId,
+        assetTag: asset.assetTag,
         model: asset.model,
         quantity: asset.quantity,
         assigned,

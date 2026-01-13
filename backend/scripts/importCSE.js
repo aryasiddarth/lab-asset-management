@@ -93,14 +93,13 @@ async function importCSE(filePath) {
           { assetTag },
           {
             assetTag,
-            slNo,
             assetId,
             labId: labMap.get(cleanLabCode),
             status: "WORKING",
-            model: itemDescription,     // ✅ STRING
-            pageNo: 1,                  // default (adjust later)
+            model: itemDescription,
+            pageNo: 1,
             quantity,
-            cost: 0,                    // unknown → set 0
+            cost: 0,
             purchaseDate: null,
             remarks: "Imported from CSE.xlsx"
           },

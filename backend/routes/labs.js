@@ -105,8 +105,11 @@ router.get("/:labId/assets", async (req, res) => {
     const result = assignments.map((a) => ({
       _id: a._id,
       assetId: a.assetId._id,
-      assetCode: a.assetId.assetId,
-      model: a.assetId.model,
+      assetCode:
+        a.assetId.billNo || a.assetId.description || String(a.assetId._id).slice(-6),
+      description: a.assetId.description,
+      billNo: a.assetId.billNo,
+      orderId: a.assetId.orderId,
       pageNo: a.assetId.pageNo,
       quantityAssigned: a.quantityAssigned
     }));
