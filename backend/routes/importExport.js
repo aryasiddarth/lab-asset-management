@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import ExcelJS from "exceljs";
+import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -161,6 +162,143 @@ router.get("/excel", authenticate, async (req, res) => {
   } catch (err) {
     console.error("Export error:", err);
     res.status(500).json({ message: "Export failed" });
+  }
+});
+
+/**
+ * GET /export/pdf
+ * Exports inventory as PDF with assigned & remaining
+ */
+router.get("/pdf", authenticate, async (req, res) => {
+  try {
+    const assets = await Asset.find().sort({ assetTag: 1, createdAt: 1 });
+
+    const doc = new PDFDocument({
+      margin: 40,
+      bufferPages: true
+    });
+
+    // Set headers
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=inventory.pdf"
+    );
+
+    // Pipe to response
+    doc.pipe(res);
+
+    // Title
+    doc.fontSize(20).font("Helvetica-Bold").text("Lab Asset Inventory", {
+      align: "center"
+    });
+    doc.moveDown(0.5);
+    doc.fontSize(10).font("Helvetica").text(
+      `Generated on: ${new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+      })}`,
+      { align: "center" }
+    );
+    doc.moveDown(1);
+
+    // Table headers
+    const headers = [
+      "Asset Tag",
+      "Model",
+      "Total Qty",
+      "Assigned",
+      "Remaining",
+      "Page No",
+      "Cost",
+      "Remarks"
+    ];
+    const columnWidths = [70, 90, 50, 60, 70, 50, 50, 80];
+    const startY = doc.y;
+    const startX = doc.page.margins.left;
+
+    // Draw header background
+    doc.rect(startX, startY, 520, 20).fill("#e0e0e0");
+
+    // Draw header text
+    let xPos = startX + 5;
+    doc.fontSize(9).font("Helvetica-Bold").fillColor("black");
+    for (let i = 0; i < headers.length; i++) {
+      doc.text(headers[i], xPos, startY + 4, {
+        width: columnWidths[i] - 10,
+        height: 20,
+        align: i > 2 ? "center" : "left"
+      });
+      xPos += columnWidths[i];
+    }
+
+    doc.moveDown(1.5);
+
+    // Add rows
+    let yPosition = doc.y;
+    let rowHeight = 30;
+
+    for (const asset of assets) {
+      const assignedAgg = await LabAsset.aggregate([
+        { $match: { assetId: asset._id } },
+        { $group: { _id: null, total: { $sum: "$quantityAssigned" } } }
+      ]);
+
+      const assigned = assignedAgg[0]?.total || 0;
+      const remaining = asset.quantity - assigned;
+
+      const rowData = [
+        asset.assetTag,
+        asset.model,
+        asset.quantity.toString(),
+        assigned.toString(),
+        remaining.toString(),
+        asset.pageNo.toString(),
+        asset.cost.toString(),
+        asset.remarks || ""
+      ];
+
+      // Check if we need a new page
+      if (yPosition + rowHeight > doc.page.height - 40) {
+        doc.addPage();
+        yPosition = 40;
+      }
+
+      // Draw row background (alternate colors)
+      const bgColor =
+        assets.indexOf(asset) % 2 === 0 ? "#f9f9f9" : "#ffffff";
+      doc.rect(startX, yPosition, 520, rowHeight).fill(bgColor);
+
+      // Draw row text
+      xPos = startX + 5;
+      doc.fontSize(8).font("Helvetica").fillColor("black");
+      for (let i = 0; i < rowData.length; i++) {
+        const cellText = rowData[i] || "";
+        doc.text(cellText, xPos, yPosition + 5, {
+          width: columnWidths[i] - 10,
+          height: rowHeight - 10,
+          align: i > 2 ? "center" : "left",
+          ellipsis: true
+        });
+        xPos += columnWidths[i];
+      }
+
+      yPosition += rowHeight;
+    }
+
+    // Add footer
+    doc.fontSize(8).text(
+      "End of Inventory Report",
+      { align: "center" },
+      doc.page.height - 30
+    );
+
+    // Finalize PDF
+    doc.end();
+  } catch (err) {
+    console.error("PDF Export error:", err);
+    res.status(500).json({ message: "PDF export failed" });
   }
 });
 

@@ -27,7 +27,17 @@ export async function importExcel(file) {
  * Bill No, Description, Order ID, Quantity, Assigned, Remaining, Page No, Cost, Remarks
  */
 export async function exportExcel() {
-  return axiosClient.get("/export/excel", {
+  return axiosClient.get("/import/excel", {
+    responseType: "blob"
+  });
+}
+
+/**
+ * Export inventory to PDF
+ * Exports all assets with assigned & remaining quantities
+ */
+export async function exportPdf() {
+  return axiosClient.get("/import/pdf", {
     responseType: "blob"
   });
 }

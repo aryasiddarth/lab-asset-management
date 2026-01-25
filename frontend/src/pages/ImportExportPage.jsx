@@ -26,7 +26,7 @@ function ImportExportPage() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExportExcel = async () => {
     try {
       setExporting(true);
       const res = await importExportApi.exportExcel();
@@ -36,12 +36,33 @@ function ImportExportPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "assets.xlsx";
+      a.download = `inventory_${new Date().toISOString().split('T')[0]}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
-      alert("Export failed");
+      alert("Excel export failed");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    try {
+      setExporting(true);
+      const res = await importExportApi.exportPdf();
+      const blob = new Blob([res.data], {
+        type: "application/pdf",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `inventory_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("PDF export failed");
     } finally {
       setExporting(false);
     }
@@ -81,15 +102,24 @@ function ImportExportPage() {
         </section>
 
         <aside className="page-aside">
-          <h2>Export to Excel</h2>
-          <p>Download all assets as an Excel file.</p>
-          <button
-            className="btn btn-outline"
-            onClick={handleExport}
-            disabled={exporting}
-          >
-            {exporting ? "Exporting..." : "Export Assets"}
-          </button>
+          <h2>Export Inventory</h2>
+          <p>Download all assets (assigned and unassigned) as Excel or PDF.</p>
+          <div style={{ display: "flex", gap: "0.5rem", flexDirection: "column" }}>
+            <button
+              className="btn btn-outline"
+              onClick={handleExportExcel}
+              disabled={exporting}
+            >
+              {exporting ? "Exporting..." : "Export as Excel"}
+            </button>
+            <button
+              className="btn btn-outline"
+              onClick={handleExportPdf}
+              disabled={exporting}
+            >
+              {exporting ? "Exporting..." : "Export as PDF"}
+            </button>
+          </div>
         </aside>
       </div>
     </div>

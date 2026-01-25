@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar.jsx";
-import Navbar from "./Navbar.jsx";
+import Navbar from "./NavBar.jsx";
 import { addActivity } from "../../utils/activityTracker.js";
 import "./layout.css";
 
