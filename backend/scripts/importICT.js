@@ -119,11 +119,10 @@ async function importICT(filePath) {
               { assetTag },
               {
                 assetTag,
-                slNo,
                 assetId,
                 labId: labMap.get(currentLabName),
                 status: "WORKING",
-                model: equipment,     // ✅ STRING
+                model: equipment,
                 pageNo: 1,
                 quantity: 1,
                 cost: 0,

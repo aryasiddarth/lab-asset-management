@@ -1,5 +1,4 @@
 import { useAuth } from "../../context/AuthContext.jsx";
-import logo from "../../assets/react.svg";
 
 function getInitials(user) {
   if (!user) return "?";
@@ -32,10 +31,10 @@ function Navbar({ onToggleSidebar }) {
         </button>
 
         <div className="navbar-brand">
-          <img src={logo} alt="Lab Asset logo" className="navbar-logo" />
+          <img src="/src/assets/mit-logo.png" alt="Lab Asset logo" className="navbar-logo" />
           <div className="navbar-brand-text">
-            <span className="navbar-title">Computer Lab Asset Management</span>
-            <span className="navbar-subtitle">Dashboard &amp; Inventory</span>
+            <span className="navbar-title">School of Computer Engineering</span>
+            <span className="navbar-subtitle">Lab Asset Management</span>
           </div>
         </div>
       </div>

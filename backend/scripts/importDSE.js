@@ -130,11 +130,10 @@ async function importDSE(filePath) {
               { assetTag },
               {
                 assetTag,
-                slNo,
                 assetId,
                 labId: labMap.get(currentLabName),
                 status: "WORKING",
-                model: currentEquipmentDesc, // ✅ STRING
+                model: currentEquipmentDesc,
                 pageNo: 1,
                 quantity,
                 cost: 0,

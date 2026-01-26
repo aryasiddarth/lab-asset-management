@@ -91,37 +91,6 @@ function LabDetailPage() {
         </p>
       )}
 
-      <h2 style={{ marginTop: "1.5rem" }}>
-        Assigned Assets
-      </h2>
-
-      {assignedAssets.length === 0 ? (
-        <p>No assets assigned to this lab.</p>
-      ) : (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Asset ID</th>
-              <th>Model</th>
-              <th>Page No</th>
-              <th>Quantity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {assignedAssets.map((a) => (
-              <tr key={a._id}>
-                <td>{a.assetCode}</td>
-                <td>{a.model}</td>
-                <td>{a.pageNo}</td>
-                <td>{a.quantityAssigned}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <hr style={{ margin: "1.5rem 0" }} />
-
       <h2>Assign Asset</h2>
 
       <div className="form-vertical">
@@ -140,7 +109,7 @@ function LabDetailPage() {
                 value={a._id}
                 disabled={a.remainingQuantity === 0}
               >
-                {a.assetId} — remaining {a.remainingQuantity}
+                {a.assetTag || a.assetId} — remaining {a.remainingQuantity}
               </option>
             ))}
           </select>
@@ -178,6 +147,37 @@ function LabDetailPage() {
           {assigning ? "Assigning…" : "Assign"}
         </button>
       </div>
+
+      <hr style={{ margin: "1.5rem 0" }} />
+
+      <h2 style={{ marginTop: "1.5rem" }}>
+        Assigned Assets
+      </h2>
+
+      {assignedAssets.length === 0 ? (
+        <p>No assets assigned to this lab.</p>
+      ) : (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Asset Tag</th>
+              <th>Model</th>
+              <th>Page No</th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {assignedAssets.map((a) => (
+              <tr key={a._id}>
+                <td>{a.assetCode}</td>
+                <td>{a.model}</td>
+                <td>{a.pageNo}</td>
+                <td>{a.quantityAssigned}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }

@@ -34,7 +34,6 @@ function AssetDetailPage() {
       <h1>Asset {asset.assetId}</h1>
 
       <div style={{ marginBottom: "1rem" }}>
-        <p><strong>SL No:</strong> {asset.slNo}</p>
         <p><strong>Model:</strong> {asset.model}</p>
         <p><strong>Page No:</strong> {asset.pageNo}</p>
         <p><strong>Cost:</strong> {asset.cost}</p>

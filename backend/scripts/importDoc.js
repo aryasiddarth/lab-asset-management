@@ -99,12 +99,12 @@ async function importDoc(filePath) {
         }
         
         await Asset.findOneAndUpdate(
-          { assetTag: asset.assetTag },
+          { billNo: asset.assetTag },
           {
-            assetTag: asset.assetTag,
+            billNo: asset.assetTag,
             labId: lab._id,
             status: asset.status || 'WORKING',
-            model: asset.model || {},
+            orderId: asset.model || null,
             serialNumber: asset.serialNumber || null,
             purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate) : null,
             warrantyExpiry: asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null,

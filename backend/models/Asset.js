@@ -2,8 +2,6 @@ import mongoose from "mongoose";
 
 const assetSchema = new mongoose.Schema(
   {
-    // INTERNAL UNIQUE IDENTIFIER (for imports, scripts, DB integrity)
-    // NOT shown in UI
     assetTag: {
       type: String,
       required: true,
@@ -11,72 +9,59 @@ const assetSchema = new mongoose.Schema(
       index: true
     },
 
-    // Serial number in physical register (NOT unique globally)
-    slNo: {
-      type: Number,
-      required: true,
-      index: true
-    },
-
-    // Human-readable inventory ID
-    assetId: {
-      type: String,
-      required: true,
-      index: true
-    },
-
-    // Lab assignment (nullable → stock/unassigned)
     labId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lab",
       default: null
     },
 
-    // Asset condition
     status: {
       type: String,
       enum: ["WORKING", "UNDER_REPAIR", "SCRAPPED", "LOST"],
       default: "WORKING"
     },
 
-    // Purchase date
     purchaseDate: {
       type: Date
     },
 
-    // Page number in physical register
     pageNo: {
       type: Number,
-      required: true
+      default: 0
     },
 
-    // Model / description
     model: {
       type: String,
-      required: true
+      default: "Unknown Model"
     },
 
-    // Quantity
     quantity: {
       type: Number,
-      required: true,
+      default: 1,
       min: 1
     },
 
-    // Cost (document clearly whether per-unit or total)
     cost: {
       type: Number,
-      required: true,
+      default: 0,
       min: 0
     },
 
-    // Notes
     remarks: {
       type: String
+    },
+
+    // Keep old fields for compatibility
+    serialNumber: {
+      type: String
+    },
+
+    warrantyExpiry: {
+      type: Date
     }
   },
   {
-    timestamps: true // createdAt = entry date
+    timestamps: true
   }
 );
 

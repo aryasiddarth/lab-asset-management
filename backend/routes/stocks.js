@@ -134,6 +134,62 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 /**
+ * POST /api/stocks/:id/assign
+ * Assign part or all of a stock to a lab. If assigning less than available quantity,
+ * split the stock: create a new stock record assigned to the lab with the
+ * requested quantity and leave the remainder as an unassigned stock.
+ */
+router.post('/:id/assign', requireAdmin, async (req, res) => {
+  try {
+    const { labId, quantity } = req.body;
+    const assignQty = parseInt(quantity, 10);
+
+    if (!labId) return res.status(400).json({ message: 'labId is required' });
+    if (!assignQty || assignQty <= 0) return res.status(400).json({ message: 'Invalid quantity' });
+
+    const stock = await Stock.findById(req.params.id);
+    if (!stock) return res.status(404).json({ message: 'Stock not found' });
+
+    if (assignQty > stock.quantity) {
+      return res.status(400).json({ message: 'Assign quantity exceeds available stock' });
+    }
+
+    // If assigning the entire stock, simply set labId
+    if (assignQty === stock.quantity) {
+      stock.labId = labId;
+      await stock.save();
+
+      const populated = await Stock.findById(stock._id).populate('labId', 'name code department');
+      return res.json({ message: 'Stock assigned', stock: populated });
+    }
+
+    // Partial assignment: reduce original stock and create new assigned stock
+    stock.quantity = stock.quantity - assignQty;
+    stock.labId = null; // ensure original remains unassigned
+    await stock.save();
+
+    // create a new unique stockId for the assigned portion
+    const newStockId = `${stock.stockId}-${Date.now()}`;
+    const newStock = new Stock({
+      stockId: newStockId,
+      quantity: assignQty,
+      purchaseDate: stock.purchaseDate,
+      labId,
+      remarks: stock.remarks
+    });
+    await newStock.save();
+
+    const assignedPopulated = await Stock.findById(newStock._id).populate('labId', 'name code department');
+    const originalPopulated = await Stock.findById(stock._id).populate('labId', 'name code department');
+
+    res.json({ message: 'Partial stock assigned', assigned: assignedPopulated, remaining: originalPopulated });
+  } catch (error) {
+    console.error('Error assigning stock:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+/**
  * PUT /api/stocks/:id
  * Update stock (Admin only)
  */

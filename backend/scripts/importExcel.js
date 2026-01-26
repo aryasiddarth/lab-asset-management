@@ -56,50 +56,83 @@ async function importExcel(filePath) {
     if (assetsWorksheet) {
       for (let rowNumber = 2; rowNumber <= assetsWorksheet.rowCount; rowNumber++) {
         const row = assetsWorksheet.getRow(rowNumber);
-        const asset = {
-          assetTag: row.getCell(1).value,
-          labCode: row.getCell(2).value,
-          status: row.getCell(3).value || 'WORKING',
-          modelName: row.getCell(4).value || null,
-          manufacturer: row.getCell(5).value || null,
-          serialNumber: row.getCell(6).value || null,
-          purchaseDate: row.getCell(7).value || null,
-          warrantyExpiry: row.getCell(8).value || null,
-          remarks: row.getCell(9).value || null
-        };
-        
-        if (asset.assetTag && asset.labCode) {
-          try {
-            // Find lab by code
-            const lab = await Lab.findOne({ code: asset.labCode });
+        // Support two possible Assets sheet formats:
+        // Old: [AssetTag, LabCode, Status, ModelName, Manufacturer, Serial, PurchaseDate, Warranty, Remarks]
+        // New: [BillNo, Description, OrderID, EntryDate, PurchaseDate, PageNo, Quantity, Cost, Remarks]
+
+        const c1 = row.getCell(1).value;
+        const c2 = row.getCell(2).value;
+
+        // Heuristic: treat as old format if column 2 looks like a lab code (no spaces) and column1 contains a dash or '/ITEM/'
+        const looksLikeOldFormat =
+          c2 && typeof c2 === 'string' && /^[A-Z0-9\-\/]+$/.test(String(c2).trim()) &&
+          c1 && typeof c1 === 'string' && (String(c1).includes('-') || String(c1).includes('/ITEM/'));
+
+        try {
+          if (looksLikeOldFormat) {
+            const assetTag = String(c1).trim();
+            const labCode = String(c2).trim();
+
+            const lab = await Lab.findOne({ code: labCode });
             if (!lab) {
-              errors.push(`Asset ${asset.assetTag}: Lab ${asset.labCode} not found`);
-              console.warn(`Lab ${asset.labCode} not found for asset ${asset.assetTag}`);
+              errors.push(`Asset ${assetTag}: Lab ${labCode} not found`);
+              console.warn(`Lab ${labCode} not found for asset ${assetTag}`);
               continue;
             }
 
             await Asset.findOneAndUpdate(
-              { assetTag: asset.assetTag },
+              { billNo: assetTag },
               {
-                assetTag: asset.assetTag,
+                billNo: assetTag,
                 labId: lab._id,
-                status: asset.status || 'WORKING',
-                model: {
-                  name: asset.modelName || null,
-                  manufacturer: asset.manufacturer || null
-                },
-                serialNumber: asset.serialNumber || null,
-                purchaseDate: asset.purchaseDate ? new Date(asset.purchaseDate) : null,
-                warrantyExpiry: asset.warrantyExpiry ? new Date(asset.warrantyExpiry) : null,
-                remarks: asset.remarks || null
+                status: row.getCell(3).value || 'WORKING',
+                orderId: row.getCell(4).value || null,
+                serialNumber: row.getCell(6).value || null,
+                purchaseDate: row.getCell(7).value ? new Date(row.getCell(7).value) : null,
+                warrantyExpiry: row.getCell(8).value ? new Date(row.getCell(8).value) : null,
+                remarks: row.getCell(9).value || null
               },
               { upsert: true, new: true }
             );
             assetsImported++;
-          } catch (error) {
-            errors.push(`Asset ${asset.assetTag}: ${error.message}`);
-            console.error(`Error importing asset ${asset.assetTag}:`, error.message);
+          } else {
+            // New format
+            const billNo = c1 ? String(c1).trim() : null;
+            const description = c2 ? String(c2).trim() : null;
+            const orderId = row.getCell(3).value ? String(row.getCell(3).value).trim() : null;
+            const entryDate = row.getCell(4).value ? new Date(row.getCell(4).value) : null;
+            const purchaseDate = row.getCell(5).value ? new Date(row.getCell(5).value) : null;
+            const pageNo = Number(row.getCell(6).value) || 0;
+            const quantity = Number(row.getCell(7).value) || 1;
+            const cost = Number(row.getCell(8).value) || 0;
+            const remarks = row.getCell(9).value || null;
+
+            if (!billNo) {
+              errors.push(`Row ${rowNumber}: missing Bill No`);
+              continue;
+            }
+
+            await Asset.findOneAndUpdate(
+              { billNo },
+              {
+                billNo,
+                description,
+                orderId,
+                entryDate,
+                purchaseDate,
+                pageNo,
+                quantity,
+                cost,
+                remarks
+              },
+              { upsert: true, new: true }
+            );
+
+            assetsImported++;
           }
+        } catch (error) {
+          errors.push(`Row ${rowNumber}: ${error.message}`);
+          console.error(`Error importing row ${rowNumber}:`, error.message);
         }
       }
       console.log(`Imported ${assetsImported} assets`);
