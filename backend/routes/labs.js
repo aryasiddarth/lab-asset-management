@@ -4,7 +4,7 @@ import Lab from "../models/Lab.js";
 import Asset from "../models/Asset.js";
 import LabAsset from "../models/LabAsset.js";
 import User from "../models/User.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -78,7 +78,7 @@ router.get("/:id", async (req, res) => {
  * POST /api/labs
  * Create lab (admin / lab_manager)
  */
-router.post("/", authenticate, async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   try {
     const lab = await Lab.create(req.body);
     res.status(201).json(lab);
@@ -87,6 +87,38 @@ router.post("/", authenticate, async (req, res) => {
       return res.status(400).json({ message: "Lab code already exists" });
     }
     console.error("Error creating lab:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * PUT /api/labs/:id
+ * Update lab details (admin / lab_manager)
+ */
+router.put("/:id", requireAdmin, async (req, res) => {
+  try {
+    const { name, code, department } = req.body;
+
+    if (!name || !code || !department) {
+      return res.status(400).json({ message: "Name, code, and department are required" });
+    }
+
+    const lab = await Lab.findById(req.params.id);
+    if (!lab) {
+      return res.status(404).json({ message: "Lab not found" });
+    }
+
+    lab.name = name;
+    lab.code = code;
+    lab.department = department;
+
+    await lab.save();
+    res.json(lab);
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(400).json({ message: "Lab code already exists" });
+    }
+    console.error("Error updating lab:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
@@ -107,6 +139,7 @@ router.get("/:labId/assets", async (req, res) => {
       assetId: a.assetId._id,
       assetCode:
         a.assetId.billNo || a.assetId.description || String(a.assetId._id).slice(-6),
+      model: a.assetId.model,
       description: a.assetId.description,
       billNo: a.assetId.billNo,
       orderId: a.assetId.orderId,
@@ -117,6 +150,66 @@ router.get("/:labId/assets", async (req, res) => {
     res.json(result);
   } catch (err) {
     console.error("Error fetching lab assets:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/**
+ * PUT /api/labs/:labId/assets/:assignmentId
+ * Update quantity of an asset assigned to a lab
+ */
+router.put("/:labId/assets/:assignmentId", authenticate, async (req, res) => {
+  try {
+    const { quantity } = req.body;
+    const { labId, assignmentId } = req.params;
+
+    const qty = Number(quantity);
+    if (!qty || qty <= 0) {
+      return res.status(400).json({ message: "Quantity must be greater than 0" });
+    }
+
+    const assignment = await LabAsset.findOne({
+      _id: assignmentId,
+      labId
+    });
+
+    if (!assignment) {
+      return res.status(404).json({ message: "Assignment not found" });
+    }
+
+    const asset = await Asset.findById(assignment.assetId);
+    if (!asset) {
+      return res.status(404).json({ message: "Asset not found" });
+    }
+
+    const assignedAgg = await LabAsset.aggregate([
+      {
+        $match: {
+          assetId: asset._id,
+          _id: { $ne: assignment._id }
+        }
+      },
+      { $group: { _id: null, total: { $sum: "$quantityAssigned" } } }
+    ]);
+
+    const assignedOther = assignedAgg[0]?.total || 0;
+    const remainingQty = asset.quantity - assignedOther;
+
+    if (qty > remainingQty) {
+      return res.status(400).json({
+        message: `Only ${remainingQty} units available`
+      });
+    }
+
+    assignment.quantityAssigned = qty;
+    await assignment.save();
+
+    res.json({
+      message: "Assignment updated successfully",
+      assignment
+    });
+  } catch (err) {
+    console.error("Error updating lab asset assignment:", err);
     res.status(500).json({ message: "Server error" });
   }
 });

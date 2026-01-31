@@ -7,7 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import Asset from "../models/Asset.js";
 import LabAsset from "../models/LabAsset.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +31,7 @@ const upload = multer({ dest: uploadsDir });
  */
 router.post(
   "/excel",
-  authenticate,
+  requireAdmin,
   upload.single("file"),
   async (req, res) => {
     try {
@@ -117,13 +117,20 @@ router.get("/excel", authenticate, async (req, res) => {
 
     sheet.columns = [
       { header: "Asset Tag", key: "assetTag", width: 20 },
+      { header: "Page No", key: "pageNo", width: 10 },
       { header: "Model", key: "model", width: 25 },
+      { header: "Status", key: "status", width: 15 },
+      { header: "Purchase Date", key: "purchaseDate", width: 15 },
+      { header: "Serial Number", key: "serialNumber", width: 20 },
+      { header: "Warranty Expiry", key: "warrantyExpiry", width: 15 },
       { header: "Total Quantity", key: "quantity", width: 15 },
       { header: "Assigned", key: "assigned", width: 15 },
       { header: "Remaining", key: "remaining", width: 15 },
-      { header: "Page No", key: "pageNo", width: 10 },
       { header: "Cost", key: "cost", width: 15 },
-      { header: "Remarks", key: "remarks", width: 30 }
+      { header: "Remarks", key: "remarks", width: 30 },
+      { header: "Lab ID", key: "labId", width: 25 },
+      { header: "Created At", key: "createdAt", width: 20 },
+      { header: "Updated At", key: "updatedAt", width: 20 }
     ];
 
     for (const asset of assets) {
@@ -137,13 +144,20 @@ router.get("/excel", authenticate, async (req, res) => {
 
       sheet.addRow({
         assetTag: asset.assetTag,
+        pageNo: asset.pageNo,
         model: asset.model,
+        status: asset.status,
+        purchaseDate: asset.purchaseDate || "",
+        serialNumber: asset.serialNumber || "",
+        warrantyExpiry: asset.warrantyExpiry || "",
         quantity: asset.quantity,
         assigned,
         remaining,
-        pageNo: asset.pageNo,
         cost: asset.cost,
-        remarks: asset.remarks || ""
+        remarks: asset.remarks || "",
+        labId: asset.labId ? asset.labId.toString() : "",
+        createdAt: asset.createdAt,
+        updatedAt: asset.updatedAt
       });
     }
 

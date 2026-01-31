@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import Asset from "../models/Asset.js";
 import LabAsset from "../models/LabAsset.js";
 import User from "../models/User.js";
-import { authenticate } from "../middleware/auth.js";
+import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -132,7 +132,7 @@ router.get("/:id", async (req, res) => {
  * POST /api/assets
  * Create inventory asset (NO LAB)
  */
-router.post("/", authenticate, async (req, res) => {
+router.post("/", requireAdmin, async (req, res) => {
   console.log('=== ASSET CREATION REQUEST ===');
   console.log('Request body received:', JSON.stringify(req.body, null, 2));
   
@@ -267,7 +267,7 @@ router.post("/", authenticate, async (req, res) => {
  * PUT /api/assets/:id
  * Update an asset
  */
-router.put("/:id", authenticate, async (req, res) => {
+router.put("/:id", requireAdmin, async (req, res) => {
   try {
     const {
       assetTag,
@@ -320,7 +320,7 @@ router.put("/:id", authenticate, async (req, res) => {
  * DELETE /api/assets/:id
  * Delete an asset
  */
-router.delete("/:id", authenticate, async (req, res) => {
+router.delete("/:id", requireAdmin, async (req, res) => {
   try {
     // Check if asset has lab allocations
     const allocations = await LabAsset.find({ assetId: req.params.id });
