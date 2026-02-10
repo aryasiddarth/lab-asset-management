@@ -10,35 +10,35 @@ const technicians = [
   {
     name: 'John Smith',
     email: 'john.tech@lab.com',
-    password: 'tech123',
+    password: 'JohnSmith@2026',
     role: 'technician',
     department: 'Computer Science'
   },
   {
     name: 'Sarah Johnson',
     email: 'sarah.tech@lab.com',
-    password: 'tech123',
+    password: 'SarahJohn@2026',
     role: 'technician',
     department: 'Engineering'
   },
   {
     name: 'Mike Davis',
     email: 'mike.tech@lab.com',
-    password: 'tech123',
+    password: 'MikeDavis@2026',
     role: 'technician',
     department: 'IT'
   },
   {
     name: 'Emily Wilson',
     email: 'emily.tech@lab.com',
-    password: 'tech123',
+    password: 'EmilyWil@2026',
     role: 'technician',
     department: 'Electronics'
   },
   {
     name: 'David Brown',
     email: 'david.tech@lab.com',
-    password: 'tech123',
+    password: 'DavidBrown@2026',
     role: 'technician',
     department: 'Mechanical'
   }

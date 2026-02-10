@@ -1,4 +1,5 @@
 import { useAuth } from "../../context/AuthContext.jsx";
+import mitLogo from "../../assets/mit-logo.png";
 
 function getInitials(user) {
   if (!user) return "?";
@@ -31,7 +32,7 @@ function Navbar({ onToggleSidebar }) {
         </button>
 
         <div className="navbar-brand">
-          <img src="/src/assets/mit-logo.png" alt="Lab Asset logo" className="navbar-logo" />
+          <img src={mitLogo} alt="Lab Asset logo" className="navbar-logo" />
           <div className="navbar-brand-text">
             <span className="navbar-title">School of Computer Engineering</span>
             <span className="navbar-subtitle">Lab Asset Management</span>

@@ -72,6 +72,8 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
+  /* let us nudge the burger so it visually sits on the sidebar border */
+  position: relative;
 }
 
 .navbar-brand {
@@ -182,6 +184,8 @@
 
 .navbar-burger {
   display: inline-flex;
+  /* pull it slightly left towards the sidebar/nav border */
+  margin-left: -0.75rem;
 }
 
 .navbar-burger span {
