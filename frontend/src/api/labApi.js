@@ -15,6 +15,11 @@ export async function getLabAssets(labId) {
   return res.data;
 }
 
+export async function updateLab(labId, payload) {
+  const res = await axiosClient.put(`/labs/${labId}`, payload);
+  return res.data;
+}
+
 export async function assignAsset(labId, assetId, quantity) {
   const res = await axiosClient.post(`/labs/${labId}/assign-asset`, {
     assetId,
@@ -26,6 +31,13 @@ export async function assignAsset(labId, assetId, quantity) {
 export async function unassignAsset(labId, assetId, quantity) {
   const res = await axiosClient.post(`/labs/${labId}/unassign-asset`, {
     assetId,
+    quantity
+  });
+  return res.data;
+}
+
+export async function updateLabAsset(labId, assignmentId, quantity) {
+  const res = await axiosClient.put(`/labs/${labId}/assets/${assignmentId}`, {
     quantity
   });
   return res.data;
